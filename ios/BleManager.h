@@ -3,7 +3,7 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 
 
-@interface BleManager : NSObject <RCTBridgeModule, CBCentralManagerDelegate, CBPeripheralDelegate>{
+@interface BleManager : NSObject <RCTBridgeModule, CBCentralManagerDelegate, CBPeripheralDelegate, CBPeripheralManagerDelegate>{
     NSString* discoverPeripherialCallbackId;
     NSMutableDictionary* connectCallbacks;
     NSMutableDictionary *readCallbacks;
@@ -17,6 +17,7 @@
 
 @property (strong, nonatomic) NSMutableSet *peripherals;
 @property (strong, nonatomic) CBCentralManager *manager;
+@property (strong, nonatomic) CBPeripheralManager *transfer;
 @property (weak, nonatomic) NSTimer *scanTimer;
 
 

@@ -15,6 +15,7 @@ RCT_EXPORT_MODULE();
 @synthesize bridge = _bridge;
 
 @synthesize manager;
+@synthesize transfer;
 @synthesize peripherals;
 @synthesize scanTimer;
 
@@ -178,6 +179,10 @@ RCT_EXPORT_MODULE();
         return 0;
 }
 
+- (void)peripheralManagerDidUpdateState:(CBPeripheralManager *)peripheral
+{
+}
+
 RCT_EXPORT_METHOD(getDiscoveredPeripherals:(nonnull RCTResponseSenderBlock)callback)
 {
     NSLog(@"Get discovered peripherals");
@@ -232,6 +237,7 @@ RCT_EXPORT_METHOD(start:(NSDictionary *)options callback:(nonnull RCTResponseSen
     } else {
         manager = [[CBCentralManager alloc] initWithDelegate:self queue:dispatch_get_main_queue()];
     }
+    transfer = [[CBPeripheralManager alloc] initWithDelegate:self queue:dispatch_get_main_queue()];
     
     callback(@[]);
 }
@@ -255,6 +261,7 @@ RCT_EXPORT_METHOD(scan:(NSArray *)serviceUUIDStrings timeoutSeconds:(nonnull NSN
     dispatch_async(dispatch_get_main_queue(), ^{
         self.scanTimer = [NSTimer scheduledTimerWithTimeInterval:[timeoutSeconds floatValue] target:self selector:@selector(stopScanTimer:) userInfo: nil repeats:NO];
     });
+  
     callback(@[]);
 }
 
@@ -285,6 +292,30 @@ RCT_EXPORT_METHOD(stopScan:(nonnull RCTResponseSenderBlock)callback)
         
     NSLog(@"Discover peripheral: %@", [peripheral name]);
     [self.bridge.eventDispatcher sendAppEventWithName:@"BleManagerDiscoverPeripheral" body:[peripheral asDictionary]];
+}
+
+RCT_EXPORT_METHOD(startTransferService:(NSString*)serviceUUID  characteristicUUID:(NSString*)characteristicUUID callback:(nonnull RCTResponseSenderBlock)callback)
+{
+  NSMutableArray* asd = [[NSMutableArray alloc] init];
+  CBMutableCharacteristic *ct = [[CBMutableCharacteristic alloc] initWithType:[CBUUID UUIDWithString:characteristicUUID]
+                                                                     properties:CBCharacteristicPropertyWriteWithoutResponse
+                                                                          value:nil
+                                                                    permissions:CBAttributePermissionsWriteable];
+  
+  [asd addObject:ct];
+  
+  CBMutableService *transferService = [[CBMutableService alloc] initWithType:[CBUUID UUIDWithString:serviceUUID]
+                                                                     primary:YES];
+  
+  // Add the characteristic to the service
+  transferService.characteristics = asd;
+  
+  // And add it to the peripheral manager
+  [transfer addService:transferService];
+  [transfer startAdvertising:@{ CBAdvertisementDataServiceUUIDsKey : @[transferService.UUID] }];
+  
+  callback(@[]);
+  
 }
 
 RCT_EXPORT_METHOD(connect:(NSString *)peripheralUUID callback:(nonnull RCTResponseSenderBlock)callback)
@@ -706,5 +737,18 @@ RCT_EXPORT_METHOD(stopNotification:(NSString *)deviceUUID serviceUUID:(NSString*
 -(NSString *) keyForPeripheral: (CBPeripheral *)peripheral andCharacteristic:(CBCharacteristic *)characteristic {
     return [NSString stringWithFormat:@"%@|%@", [peripheral uuidAsString], [characteristic UUID]];
 }
+
+- (void)peripheralManager:(CBPeripheralManager *)peripheral didReceiveWriteRequests:(NSArray<CBATTRequest *> *)requests {
+  
+  [transfer respondToRequest:[requests objectAtIndex:0]
+                            withResult:CBATTErrorSuccess];
+  
+  for (CBATTRequest *rq in requests) {
+    NSData* packet = rq.value;
+    [self.bridge.eventDispatcher sendAppEventWithName:@"BleManagerDidReceiveData" body:@{@"id": rq.central.identifier.UUIDString, @"data": [rq.value hexadecimalString]}];
+  }
+
+ }
+
 
 @end

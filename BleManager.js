@@ -65,6 +65,18 @@ class BleManager  {
     });
   }
 
+  startTransferService(serviceUUID, characteristicUUID) {
+    return new Promise((fulfill, reject) => {
+      bleManager.startTransferService(serviceUUID, characteristicUUID, (error) => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill();
+        }
+      });
+    });
+  }
+
   connect(peripheralId) {
     return new Promise((fulfill, reject) => {
       bleManager.connect(peripheralId, (error, peripheral) => {
