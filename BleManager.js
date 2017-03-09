@@ -129,6 +129,10 @@ class BleManager  {
     bleManager.checkState();
   }
 
+  checkScanState() {
+    bleManager.checkScanState();
+  }
+
   start(options) {
     return new Promise((fulfill, reject) => {
       if (options == null) {

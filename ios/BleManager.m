@@ -238,13 +238,14 @@ RCT_EXPORT_METHOD(start:(NSDictionary *)options callback:(nonnull RCTResponseSen
         manager = [[CBCentralManager alloc] initWithDelegate:self queue:dispatch_get_main_queue()];
     }
     transfer = [[CBPeripheralManager alloc] initWithDelegate:self queue:dispatch_get_main_queue()];
+    [manager addObserver:self forKeyPath:@"isScanning" options:NSKeyValueObservingOptionNew context:nil];
     
     callback(@[]);
 }
 
 RCT_EXPORT_METHOD(scan:(NSArray *)serviceUUIDStrings timeoutSeconds:(nonnull NSNumber *)timeoutSeconds allowDuplicates:(BOOL)allowDuplicates callback:(nonnull RCTResponseSenderBlock)callback)
 {
-    NSLog(@"scan with timeout %@", timeoutSeconds);
+    timeoutSeconds.intValue > 0 ? NSLog(@"scan with timeout %@", timeoutSeconds) : NSLog(@"scan without timeout");
     NSArray * services = [RCTConvert NSArray:serviceUUIDStrings];
     NSMutableArray *serviceUUIDs = [NSMutableArray new];
     NSDictionary *options = nil;
@@ -257,10 +258,12 @@ RCT_EXPORT_METHOD(scan:(NSArray *)serviceUUIDStrings timeoutSeconds:(nonnull NSN
         [serviceUUIDs addObject:serviceUUID];
     }
     [manager scanForPeripheralsWithServices:serviceUUIDs options:options];
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.scanTimer = [NSTimer scheduledTimerWithTimeInterval:[timeoutSeconds floatValue] target:self selector:@selector(stopScanTimer:) userInfo: nil repeats:NO];
-    });
+  
+    if (timeoutSeconds.intValue > 0) {
+      dispatch_async(dispatch_get_main_queue(), ^{
+          self.scanTimer = [NSTimer scheduledTimerWithTimeInterval:[timeoutSeconds floatValue] target:self selector:@selector(stopScanTimer:) userInfo: nil repeats:NO];
+      });
+    }
   
     callback(@[]);
 }
@@ -296,21 +299,19 @@ RCT_EXPORT_METHOD(stopScan:(nonnull RCTResponseSenderBlock)callback)
 
 RCT_EXPORT_METHOD(startTransferService:(NSString*)serviceUUID  characteristicUUID:(NSString*)characteristicUUID callback:(nonnull RCTResponseSenderBlock)callback)
 {
-  NSMutableArray* asd = [[NSMutableArray alloc] init];
+  NSMutableArray* transferCharacteristics = [[NSMutableArray alloc] init];
   CBMutableCharacteristic *ct = [[CBMutableCharacteristic alloc] initWithType:[CBUUID UUIDWithString:characteristicUUID]
-                                                                     properties:CBCharacteristicPropertyWriteWithoutResponse
-                                                                          value:nil
-                                                                    permissions:CBAttributePermissionsWriteable];
+                                                                   properties:CBCharacteristicPropertyWriteWithoutResponse
+                                                                        value:nil
+                                                                  permissions:CBAttributePermissionsWriteable];
   
-  [asd addObject:ct];
-  
+  [transferCharacteristics addObject:ct];
   CBMutableService *transferService = [[CBMutableService alloc] initWithType:[CBUUID UUIDWithString:serviceUUID]
                                                                      primary:YES];
   
-  // Add the characteristic to the service
-  transferService.characteristics = asd;
+  transferService.characteristics = transferCharacteristics;
   
-  // And add it to the peripheral manager
+  NSLog(@"Start transfer with service %@ and characteristic %@", serviceUUID, characteristicUUID);
   [transfer addService:transferService];
   [transfer startAdvertising:@{ CBAdvertisementDataServiceUUIDsKey : @[transferService.UUID] }];
   
@@ -380,6 +381,27 @@ RCT_EXPORT_METHOD(checkState)
     if (manager != nil){
         [self centralManagerDidUpdateState:self.manager];
     }
+}
+
+RCT_EXPORT_METHOD(checkScanState)
+{
+  if (manager != nil){
+    [self centralManagerDidUpdateState:self.manager];
+  }
+}
+
+-(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+  NSLog(@"observeValueForKeyPath");
+  if ([keyPath isEqualToString:@"isScanning"]) {
+    [self notififyScanState];
+  }
+}
+
+- (void)notififyScanState
+{
+  NSString* scanState = [manager isScanning] ? @"on" : @"off";
+  NSLog(@"Notify scan state %@", scanState);
+  [self.bridge.eventDispatcher sendAppEventWithName:@"BleManagerScanState" body:@{@"state":scanState}];
 }
 
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error
