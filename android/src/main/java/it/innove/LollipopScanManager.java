@@ -87,6 +87,10 @@ public class LollipopScanManager extends ScanManager {
 		callback.invoke();
 	}
 
+    public boolean isScanning() {
+        return true;
+    }
+
 	private ScanCallback mScanCallback = new ScanCallback() {
 		@Override
 		public void onScanResult(final int callbackType, final ScanResult result) {

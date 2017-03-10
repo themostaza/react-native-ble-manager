@@ -204,8 +204,6 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 			callback.invoke("Peripheral not found");
 	}
 
-
-
 	@ReactMethod
 	public void write(String deviceUUID, String serviceUUID, String characteristicUUID, String message, Integer maxByteSize, Callback callback) {
 		Log.d(LOG_TAG, "Write to: " + deviceUUID);
@@ -252,44 +250,6 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 			callback.invoke("Peripheral not found", null);
 	}
 
-	private BluetoothAdapter.LeScanCallback mLeScanCallback =
-			new BluetoothAdapter.LeScanCallback() {
-
-
-				@Override
-				public void onLeScan(final BluetoothDevice device, final int rssi,
-									 final byte[] scanRecord) {
-					runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
-							Log.i(LOG_TAG, "DiscoverPeripheral: " + device.getName());
-							String address = device.getAddress();
-
-							if (!peripherals.containsKey(address)) {
-								BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-								Peripheral peripheral = new Peripheral(device, rssi, scanRecord, reactContext, manager);
-								peripherals.put(device.getAddress(), peripheral);
-
-								try {
-									Bundle bundle = BundleJSONConverter.convertToBundle(peripheral.asJSONObject());
-									WritableMap map = Arguments.fromBundle(bundle);
-									sendEvent("BleManagerDiscoverPeripheral", map);
-								} catch (JSONException ignored) {
-
-								}
-
-							} else {
-								// this isn't necessary
-								Peripheral peripheral = peripherals.get(address);
-								peripheral.updateRssi(rssi);
-							}
-						}
-					});
-				}
-
-
-			};
-
 	@ReactMethod
 	public void checkState(){
 		Log.d(LOG_TAG, "checkState");
@@ -311,6 +271,28 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		Log.d(LOG_TAG, "state:" + state);
 		sendEvent("BleManagerDidUpdateState", map);
 	}
+
+    @ReactMethod
+    public void checkScanState(){
+        Log.d(LOG_TAG, "checkScanState");
+
+        BluetoothAdapter adapter = getBluetoothAdapter();
+        String state = "off";
+        if (scanManager != null) {
+            switch (adapter.getState()) {
+                case BluetoothAdapter.STATE_ON:
+                    state = "on";
+                    break;
+                case BluetoothAdapter.STATE_OFF:
+                    state = "off";
+            }
+        }
+
+        WritableMap map = Arguments.createMap();
+        map.putString("state", state);
+        Log.d(LOG_TAG, "state:" + state);
+        sendEvent("BleManagerDidUpdateState", map);
+    }
 
 	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
 		@Override

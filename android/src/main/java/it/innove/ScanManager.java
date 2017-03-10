@@ -54,6 +54,8 @@ public abstract class ScanManager {
 
 	public abstract void scan(ReadableArray serviceUUIDs, final int scanSeconds, Callback callback);
 
+    public abstract boolean isScanning();
+
     protected void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
         if (mBluetoothGattServer == null) {
             Log.d(bleManager.LOG_TAG, "start transfer with service " + serviceUUID + " and characteristic " + characteristicUUID);
