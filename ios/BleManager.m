@@ -37,6 +37,11 @@ RCT_EXPORT_MODULE();
     return self;
 }
 
+- (void)dealloc
+{
+  [manager removeObserver:self forKeyPath:@"isScanning"];
+}
+
 
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
     if (error) {
