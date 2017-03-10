@@ -638,7 +638,7 @@ RCT_EXPORT_METHOD(stopNotification:(NSString *)deviceUUID serviceUUID:(NSString*
     [servicesForPeriperal addObjectsFromArray:peripheral.services];
     [connectCallbackLatches setObject:servicesForPeriperal forKey:[peripheral uuidAsString]];
     for (CBService *service in peripheral.services) {
-        NSLog(@"Servizio %@ %@", service.UUID, service.description);
+        NSLog(@"Service %@ %@", service.UUID, service.description);
         [peripheral discoverCharacteristics:nil forService:service]; // discover all is slow
     }
 }
@@ -772,7 +772,7 @@ RCT_EXPORT_METHOD(stopNotification:(NSString *)deviceUUID serviceUUID:(NSString*
   
   for (CBATTRequest *rq in requests) {
     NSData* packet = rq.value;
-    [self.bridge.eventDispatcher sendAppEventWithName:@"BleManagerDidReceiveData" body:@{@"id": rq.central.identifier.UUIDString, @"data": [rq.value hexadecimalString]}];
+    [self.bridge.eventDispatcher sendAppEventWithName:@"BleManagerDidReceivedData" body:@{@"id": rq.central.identifier.UUIDString, @"data": [rq.value hexadecimalString]}];
   }
 
  }

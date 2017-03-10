@@ -2,6 +2,8 @@ package it.innove;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import com.facebook.react.bridge.*;
@@ -36,10 +38,10 @@ public class LegacyScanManager extends ScanManager {
 						public void run() {
 							Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + device.getName());
 							String address = device.getAddress();
-
+							// TODO send always BleManagerDiscoverPeripheral
 							if (!bleManager.peripherals.containsKey(address)) {
-
-								Peripheral peripheral = new Peripheral(device, rssi, scanRecord, reactContext);
+								BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+								Peripheral peripheral = new Peripheral(device, rssi, scanRecord, reactContext, manager);
 								bleManager.peripherals.put(device.getAddress(), peripheral);
 
 								try {

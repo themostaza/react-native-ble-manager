@@ -6,11 +6,14 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
+import android.content.Context;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -50,36 +53,24 @@ public class Peripheral extends BluetoothGattCallback {
 
 	private List<byte[]> writeQueue = new ArrayList<>();
 
-    private final BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback() {
 
-        @Override
-        public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
-        }
+    private BluetoothManager mBluetoothManager;
+    public BluetoothGattServer mBluetoothGattServer;
 
-        @Override
-        public void onServiceAdded(int status, BluetoothGattService service) {
-        }
-
-        @Override
-        public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value)
-        {
-            Log.d(LOG_TAG, "onCharacteristicWriteRequest "); // TODO enable gatt server
-
-        }
-    };
-
-	public Peripheral(BluetoothDevice device, int advertisingRSSI, byte[] scanRecord, ReactContext reactContext) {
+	public Peripheral(BluetoothDevice device, int advertisingRSSI, byte[] scanRecord, ReactContext reactContext, BluetoothManager bluetoothManager) {
 
 		this.device = device;
 		this.advertisingRSSI = advertisingRSSI;
 		this.advertisingData = scanRecord;
 		this.reactContext = reactContext;
+        this.mBluetoothManager = bluetoothManager;
 
 	}
 
-	public Peripheral(BluetoothDevice device, ReactContext reactContext) {
+	public Peripheral(BluetoothDevice device, ReactContext reactContext, BluetoothManager bluetoothManager) {
 		this.device = device;
 		this.reactContext = reactContext;
+        this.mBluetoothManager = bluetoothManager;
 	}
 
 	private void sendEvent(String eventName, @Nullable WritableMap params) {
@@ -292,8 +283,12 @@ public class Peripheral extends BluetoothGattCallback {
 	}
 
 	public void updateRssi(int rssi) {
-		advertisingRSSI = rssi;
-	}
+        advertisingRSSI = rssi;
+    }
+
+    public void updateAdvertisingData(byte[] scanRecord) {
+        advertisingData = scanRecord;
+    }
 
 	public int unsignedToBytes(byte b) {
 		return b & 0xFF;
@@ -404,10 +399,10 @@ public class Peripheral extends BluetoothGattCallback {
 					// Prefer notify over indicate
 					if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0) {
 						Log.d(LOG_TAG, "Characteristic " + characteristicUUID + " set NOTIFY");
-						descriptor.setValue(true ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+						descriptor.setValue(notify ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
 					} else if ((characteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0) {
 						Log.d(LOG_TAG, "Characteristic " + characteristicUUID + " set INDICATE");
-						descriptor.setValue(true ? BluetoothGattDescriptor.ENABLE_INDICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+						descriptor.setValue(notify ? BluetoothGattDescriptor.ENABLE_INDICATION_VALUE : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
 					} else {
 						Log.d(LOG_TAG, "Characteristic " + characteristicUUID + " does not have NOTIFY or INDICATE property set");
 					}

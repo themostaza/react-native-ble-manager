@@ -3,10 +3,12 @@ package it.innove;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelUuid;
@@ -95,24 +97,23 @@ public class LollipopScanManager extends ScanManager {
 					Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + result.getDevice().getName());
 					String address = result.getDevice().getAddress();
 
-					if (!bleManager.peripherals.containsKey(address)) {
-
-						Peripheral peripheral = new Peripheral(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes(), reactContext);
+                    Peripheral peripheral = bleManager.peripherals.get(address);
+					if (peripheral == null) {
+						BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+                        peripheral = new Peripheral(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes(), reactContext, manager);
 						bleManager.peripherals.put(address, peripheral);
-
-						try {
-							Bundle bundle = BundleJSONConverter.convertToBundle(peripheral.asJSONObject());
-							WritableMap map = Arguments.fromBundle(bundle);
-							bleManager.sendEvent("BleManagerDiscoverPeripheral", map);
-						} catch (JSONException ignored) {
-
-						}
-
 					} else {
-						// this isn't necessary
-						Peripheral peripheral = bleManager.peripherals.get(address);
 						peripheral.updateRssi(result.getRssi());
+                        peripheral.updateAdvertisingData(result.getScanRecord().getBytes());
 					}
+
+                    try {
+                        Bundle bundle = BundleJSONConverter.convertToBundle(peripheral.asJSONObject());
+                        WritableMap map = Arguments.fromBundle(bundle);
+                        bleManager.sendEvent("BleManagerDiscoverPeripheral", map);
+                    } catch (JSONException ignored) {
+
+                    }
 				}
 			});
 		}

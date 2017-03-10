@@ -143,6 +143,11 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		scanManager.stopScan(callback);
 	}
 
+    @ReactMethod
+    public void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
+        scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
+    }
+
 	@ReactMethod
 	public void connect(String peripheralUUID, Callback callback) {
 		Log.d(LOG_TAG, "Connect to: " + peripheralUUID );
@@ -153,8 +158,9 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 				peripheralUUID = peripheralUUID.toUpperCase();
 			}
 			if (BluetoothAdapter.checkBluetoothAddress(peripheralUUID)) {
+				BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
 				BluetoothDevice device = bluetoothAdapter.getRemoteDevice(peripheralUUID);
-				peripheral = new Peripheral(device, reactContext);
+				peripheral = new Peripheral(device, reactContext, manager);
 				peripherals.put(peripheralUUID, peripheral);
 			} else {
 				callback.invoke("Invalid peripheral uuid");
@@ -260,8 +266,8 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 							String address = device.getAddress();
 
 							if (!peripherals.containsKey(address)) {
-
-								Peripheral peripheral = new Peripheral(device, rssi, scanRecord, reactContext);
+								BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+								Peripheral peripheral = new Peripheral(device, rssi, scanRecord, reactContext, manager);
 								peripherals.put(device.getAddress(), peripheral);
 
 								try {
