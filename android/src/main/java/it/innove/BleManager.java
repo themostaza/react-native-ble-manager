@@ -143,10 +143,10 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		scanManager.stopScan(callback);
 	}
 
-    @ReactMethod
-    public void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
-        scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
-    }
+  @ReactMethod
+  public void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
+      scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
+  }
 
 	@ReactMethod
 	public void connect(String peripheralUUID, Callback callback) {
