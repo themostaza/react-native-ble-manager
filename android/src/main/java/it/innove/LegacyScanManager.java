@@ -23,6 +23,7 @@ public class LegacyScanManager extends ScanManager {
 		scanSessionId.incrementAndGet();
 
 		getBluetoothAdapter().stopLeScan(mLeScanCallback);
+		setScanState(false);
 		callback.invoke();
 	}
 
@@ -67,6 +68,7 @@ public class LegacyScanManager extends ScanManager {
 	@Override
 	public void scan(ReadableArray serviceUUIDs, final int scanSeconds, Callback callback) {
 		getBluetoothAdapter().startLeScan(mLeScanCallback);
+		setScanState(true);
 		if (scanSeconds > 0) {
 			Thread thread = new Thread() {
 				private int currentScanSession = scanSessionId.incrementAndGet();
@@ -90,6 +92,7 @@ public class LegacyScanManager extends ScanManager {
 								}
 								WritableMap map = Arguments.createMap();
 								bleManager.sendEvent("BleManagerStopScan", map);
+								setScanState(false);
 							}
 						}
 					});

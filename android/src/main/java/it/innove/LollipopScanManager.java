@@ -18,6 +18,7 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
 
 import static com.facebook.react.bridge.UiThreadUtil.runOnUiThread;
 
@@ -34,6 +35,7 @@ public class LollipopScanManager extends ScanManager {
 		scanSessionId.incrementAndGet();
 
 		getBluetoothAdapter().getBluetoothLeScanner().stopScan(mScanCallback);
+        setScanState(false);
 		callback.invoke();
 	}
 
@@ -52,6 +54,7 @@ public class LollipopScanManager extends ScanManager {
 		}
 
 		getBluetoothAdapter().getBluetoothLeScanner().startScan(filters, settings, mScanCallback);
+        setScanState(true);
 		if (scanSeconds > 0) {
 			Thread thread = new Thread() {
 				private int currentScanSession = scanSessionId.incrementAndGet();
@@ -72,6 +75,7 @@ public class LollipopScanManager extends ScanManager {
 							if (scanSessionId.intValue() == currentScanSession) {
 								if(btAdapter.getState() == BluetoothAdapter.STATE_ON) {
 									btAdapter.getBluetoothLeScanner().stopScan(mScanCallback);
+                                    setScanState(false);
 								}
 								WritableMap map = Arguments.createMap();
 								bleManager.sendEvent("BleManagerStopScan", map);
@@ -86,10 +90,6 @@ public class LollipopScanManager extends ScanManager {
 		}
 		callback.invoke();
 	}
-
-    public boolean isScanning() {
-        return true;
-    }
 
 	private ScanCallback mScanCallback = new ScanCallback() {
 		@Override

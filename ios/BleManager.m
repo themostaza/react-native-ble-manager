@@ -406,7 +406,7 @@ RCT_EXPORT_METHOD(checkScanState)
 {
   NSString* scanState = [manager isScanning] ? @"on" : @"off";
   NSLog(@"Notify scan state %@", scanState);
-  [self.bridge.eventDispatcher sendAppEventWithName:@"BleManagerScanState" body:@{@"state":scanState}];
+  [self.bridge.eventDispatcher sendAppEventWithName:@"BleManagerDidUpdateScanState" body:@{@"state":scanState}];
 }
 
 - (void)centralManager:(CBCentralManager *)central didFailToConnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error

@@ -143,10 +143,10 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		scanManager.stopScan(callback);
 	}
 
-  @ReactMethod
-  public void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
-      scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
-  }
+	@ReactMethod
+	public void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
+		scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
+	}
 
 	@ReactMethod
 	public void connect(String peripheralUUID, Callback callback) {
@@ -275,23 +275,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     @ReactMethod
     public void checkScanState(){
         Log.d(LOG_TAG, "checkScanState");
-
-        BluetoothAdapter adapter = getBluetoothAdapter();
-        String state = "off";
-        if (scanManager != null) {
-            switch (adapter.getState()) {
-                case BluetoothAdapter.STATE_ON:
-                    state = "on";
-                    break;
-                case BluetoothAdapter.STATE_OFF:
-                    state = "off";
-            }
-        }
-
-        WritableMap map = Arguments.createMap();
-        map.putString("state", state);
-        Log.d(LOG_TAG, "state:" + state);
-        sendEvent("BleManagerDidUpdateState", map);
+		scanManager.notifyScanState();
     }
 
 	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {

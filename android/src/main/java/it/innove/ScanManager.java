@@ -31,8 +31,9 @@ public abstract class ScanManager {
 	protected ReactContext reactContext;
 	protected BleManager bleManager;
 	protected AtomicInteger scanSessionId = new AtomicInteger();
+	private Boolean isScanning = false;
 
-	public BluetoothGattServer mBluetoothGattServer; // for UART: TX as a client and RX as a server. To use all the profile feature it's necessary to build a GATT server to manage RX from remote device
+	public BluetoothGattServer mBluetoothGattServer;
 
 
 	public ScanManager(ReactApplicationContext reactContext, BleManager bleManager) {
@@ -54,7 +55,18 @@ public abstract class ScanManager {
 
 	public abstract void scan(ReadableArray serviceUUIDs, final int scanSeconds, Callback callback);
 
-    public abstract boolean isScanning();
+    protected void setScanState(Boolean state) {
+        isScanning = state;
+        notifyScanState();
+    }
+
+    public void notifyScanState() {
+        WritableMap map = Arguments.createMap();
+        String stringState = isScanning ? "on" : "off";
+        map.putString("state", stringState);
+        Log.d(bleManager.LOG_TAG, "state: " + stringState);
+        bleManager.sendEvent("BleManagerDidUpdateScanState", map);
+    };
 
     protected void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
         if (mBluetoothGattServer == null) {
