@@ -33,7 +33,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 
 	private BluetoothAdapter bluetoothAdapter;
 	private Context context;
-	private ReactContext reactContext;
+	private ReactApplicationContext reactContext;
 	private Callback enableBluetoothCallback;
 	private ScanManager scanManager;
 
@@ -107,8 +107,10 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 			callback.invoke();
 	}
 
+
+
 	@ReactMethod
-	public void scan(ReadableArray serviceUUIDs, final int scanSeconds, boolean allowDuplicates, Callback callback) {
+	public void scan(ReadableArray serviceUUIDs, final int scanSeconds, boolean allowDuplicates, boolean useLegacyScan, Callback callback) {
 		Log.d(LOG_TAG, "scan");
 		if (getBluetoothAdapter() == null) {
 			Log.d(LOG_TAG, "No bluetooth support");
@@ -124,6 +126,16 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 				iterator.remove();
 			}
 		}
+
+        if (useLegacyScan && scanManager instanceof LollipopScanManager) {
+            Log.d(LOG_TAG, "Replace ScanManager with legacy one");
+            scanManager.stopScan(null);
+            scanManager = new LegacyScanManager(reactContext, this);
+        } else if (!useLegacyScan && scanManager instanceof LegacyScanManager) {
+            Log.d(LOG_TAG, "Replace ScanManager with Lollipop one");
+            scanManager.stopScan(null);
+            scanManager = new LollipopScanManager(reactContext, this);
+        }
 
 		scanManager.scan(serviceUUIDs, scanSeconds, callback);
 	}

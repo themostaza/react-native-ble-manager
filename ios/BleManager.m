@@ -248,7 +248,7 @@ RCT_EXPORT_METHOD(start:(NSDictionary *)options callback:(nonnull RCTResponseSen
     callback(@[]);
 }
 
-RCT_EXPORT_METHOD(scan:(NSArray *)serviceUUIDStrings timeoutSeconds:(nonnull NSNumber *)timeoutSeconds allowDuplicates:(BOOL)allowDuplicates callback:(nonnull RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(scan:(NSArray *)serviceUUIDStrings timeoutSeconds:(nonnull NSNumber *)timeoutSeconds allowDuplicates:(BOOL)allowDuplicates useLegacyScan:(BOOL)useLegacyScan callback:(nonnull RCTResponseSenderBlock)callback)
 {
     timeoutSeconds.intValue > 0 ? NSLog(@"scan with timeout %@", timeoutSeconds) : NSLog(@"scan without timeout");
     NSArray * services = [RCTConvert NSArray:serviceUUIDStrings];

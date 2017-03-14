@@ -148,12 +148,12 @@ class BleManager  {
     });
   }
 
-  scan(serviceUUIDs, seconds, allowDuplicates) {
+  scan(serviceUUIDs, seconds, allowDuplicates, useLegacyScan) {
     return new Promise((fulfill, reject) => {
       if (allowDuplicates == null) {
         allowDuplicates = false;
       }
-      bleManager.scan(serviceUUIDs, seconds, allowDuplicates, (error) => {
+      bleManager.scan(serviceUUIDs, seconds, allowDuplicates, useLegacyScan, (error) => {
         if (error) {
           reject(error);
         } else {

@@ -24,7 +24,7 @@ public class LegacyScanManager extends ScanManager {
 
 		getBluetoothAdapter().stopLeScan(mLeScanCallback);
 		setScanState(false);
-		callback.invoke();
+        if (callback != null) callback.invoke();
 	}
 
 	private BluetoothAdapter.LeScanCallback mLeScanCallback =
@@ -37,27 +37,26 @@ public class LegacyScanManager extends ScanManager {
 					runOnUiThread(new Runnable() {
 						@Override
 						public void run() {
-							Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + device.getName());
-							String address = device.getAddress();
-							// TODO send always BleManagerDiscoverPeripheral
-							if (!bleManager.peripherals.containsKey(address)) {
-								BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-								Peripheral peripheral = new Peripheral(device, rssi, scanRecord, reactContext, manager);
-								bleManager.peripherals.put(device.getAddress(), peripheral);
+                            Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + device.getName());
+                            String address = device.getAddress();
 
-								try {
-									Bundle bundle = BundleJSONConverter.convertToBundle(peripheral.asJSONObject());
-									WritableMap map = Arguments.fromBundle(bundle);
-									bleManager.sendEvent("BleManagerDiscoverPeripheral", map);
-								} catch (JSONException ignored) {
+                            Peripheral peripheral = bleManager.peripherals.get(address);
+                            if (peripheral == null) {
+                                BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+                                peripheral = new Peripheral(device, rssi, scanRecord, reactContext, manager);
+                                bleManager.peripherals.put(address, peripheral);
+                            } else {
+                                peripheral.updateRssi(rssi);
+                                peripheral.updateAdvertisingData(scanRecord);
+                            }
 
-								}
+                            try {
+                                Bundle bundle = BundleJSONConverter.convertToBundle(peripheral.asJSONObject());
+                                WritableMap map = Arguments.fromBundle(bundle);
+                                bleManager.sendEvent("BleManagerDiscoverPeripheral", map);
+                            } catch (JSONException ignored) {
 
-							} else {
-								// this isn't necessary
-								Peripheral peripheral = bleManager.peripherals.get(address);
-								peripheral.updateRssi(rssi);
-							}
+                            }
 						}
 					});
 				}

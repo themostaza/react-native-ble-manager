@@ -36,7 +36,7 @@ public class LollipopScanManager extends ScanManager {
 
 		getBluetoothAdapter().getBluetoothLeScanner().stopScan(mScanCallback);
         setScanState(false);
-		callback.invoke();
+        if (callback != null) callback.invoke();
 	}
 
 	@Override
