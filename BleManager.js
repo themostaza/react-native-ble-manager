@@ -153,6 +153,9 @@ class BleManager  {
       if (allowDuplicates == null) {
         allowDuplicates = false;
       }
+      if (useLegacyScan == null) {
+        useLegacyScan = false;
+      }
       bleManager.scan(serviceUUIDs, seconds, allowDuplicates, useLegacyScan, (error) => {
         if (error) {
           reject(error);

@@ -22,8 +22,6 @@ import java.util.*;
 
 import static android.app.Activity.RESULT_OK;
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
-import static com.facebook.react.bridge.UiThreadUtil.runOnUiThread;
-
 
 class BleManager extends ReactContextBaseJavaModule implements ActivityEventListener {
 
@@ -48,11 +46,12 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		this.reactContext = reactContext;
 		reactContext.addActivityEventListener(this);
 		if (Build.VERSION.SDK_INT >= LOLLIPOP) {
+            Log.d(LOG_TAG, "BleManager lollipop created");
 			scanManager = new LollipopScanManager(reactContext, this);
 		} else {
+            Log.d(LOG_TAG, "BleManager legacy created");
 			scanManager = new LegacyScanManager(reactContext, this);
 		}
-		Log.d(LOG_TAG, "BleManager created");
 	}
 
 	@Override
@@ -127,14 +126,19 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 			}
 		}
 
+        // switch scan manager version if needed
         if (useLegacyScan && scanManager instanceof LollipopScanManager) {
             Log.d(LOG_TAG, "Replace ScanManager with legacy one");
             scanManager.stopScan(null);
+            // TODO create the new scan manager only when the older one is stopped
             scanManager = new LegacyScanManager(reactContext, this);
         } else if (!useLegacyScan && scanManager instanceof LegacyScanManager) {
-            Log.d(LOG_TAG, "Replace ScanManager with Lollipop one");
-            scanManager.stopScan(null);
-            scanManager = new LollipopScanManager(reactContext, this);
+            if (Build.VERSION.SDK_INT >= LOLLIPOP) {
+                Log.d(LOG_TAG, "Replace ScanManager with Lollipop one");
+                scanManager.stopScan(null);
+                // TODO create the new scan manager only when the older one is stopped
+                scanManager = new LollipopScanManager(reactContext, this);
+            }
         }
 
 		scanManager.scan(serviceUUIDs, scanSeconds, callback);
@@ -277,10 +281,10 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 					state = "off";
 			}
 		}
+        Log.d(LOG_TAG, "state:" + state);
 
 		WritableMap map = Arguments.createMap();
 		map.putString("state", state);
-		Log.d(LOG_TAG, "state:" + state);
 		sendEvent("BleManagerDidUpdateState", map);
 	}
 

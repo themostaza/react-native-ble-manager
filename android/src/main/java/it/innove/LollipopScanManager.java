@@ -18,7 +18,6 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Observable;
 
 import static com.facebook.react.bridge.UiThreadUtil.runOnUiThread;
 

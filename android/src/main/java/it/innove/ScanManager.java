@@ -69,16 +69,18 @@ public abstract class ScanManager {
     };
 
     protected void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
+        // TODO move mBluetoothGattServer outside this class?
+        BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(UUID.fromString(characteristicUUID), BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE, BluetoothGattCharacteristic.PERMISSION_WRITE);
+        BluetoothGattService service = new BluetoothGattService(UUID.fromString(serviceUUID), BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        service.addCharacteristic(characteristic);
         if (mBluetoothGattServer == null) {
-            Log.d(bleManager.LOG_TAG, "start transfer with service " + serviceUUID + " and characteristic " + characteristicUUID);
+            Log.d(bleManager.LOG_TAG, "new transfer with service " + serviceUUID + " and characteristic " + characteristicUUID);
             android.bluetooth.BluetoothManager manager = (android.bluetooth.BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
             mBluetoothGattServer = manager.openGattServer(reactContext.getApplicationContext(), mGattServerCallback);
-            final BluetoothGattCharacteristic characteristic = new BluetoothGattCharacteristic(UUID.fromString(characteristicUUID), BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE, BluetoothGattCharacteristic.PERMISSION_WRITE);
-            final BluetoothGattService service = new BluetoothGattService(UUID.fromString(serviceUUID), BluetoothGattService.SERVICE_TYPE_PRIMARY);
-            service.addCharacteristic(characteristic);
-            mBluetoothGattServer.addService(service);
         }
-        // TODO add new service if mBluetoothGattServer is not initialized
+        // TODO test with multiple services
+        mBluetoothGattServer.addService(service);
+
         callback.invoke();
     }
 
