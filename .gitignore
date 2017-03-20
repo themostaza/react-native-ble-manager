@@ -1,4 +1,4 @@
-react-native/
+node_modules/
 
 .idea
 android/local.properties
