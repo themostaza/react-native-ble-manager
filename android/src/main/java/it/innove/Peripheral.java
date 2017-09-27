@@ -36,7 +36,7 @@ import java.util.UUID;
 public class Peripheral extends BluetoothGattCallback {
 
 	private static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
-	public static final String LOG_TAG = "logs";
+	public static final String LOG_TAG = "RNBleManagerPeripheral";
 
 	private BluetoothDevice device;
 	private byte[] advertisingData;
@@ -336,7 +336,7 @@ public class Peripheral extends BluetoothGattCallback {
 	@Override
 	public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
 		super.onCharacteristicWrite(gatt, characteristic, status);
-		Log.d(LOG_TAG, "onCharacteristicWrite " + characteristic);
+		Log.d(LOG_TAG, "onCharacteristicWrite " + characteristic + " status " + status);
 
 		if (writeCallback != null) {
 

@@ -77,9 +77,10 @@ public abstract class ScanManager {
             Log.d(bleManager.LOG_TAG, "new transfer with service " + serviceUUID + " and characteristic " + characteristicUUID);
             android.bluetooth.BluetoothManager manager = (android.bluetooth.BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
             mBluetoothGattServer = manager.openGattServer(reactContext.getApplicationContext(), mGattServerCallback);
+            mBluetoothGattServer.addService(service);
         }
         // TODO test with multiple services
-        mBluetoothGattServer.addService(service);
+        // mBluetoothGattServer.addService(service);
 
         callback.invoke();
     }

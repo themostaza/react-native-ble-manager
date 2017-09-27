@@ -235,7 +235,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 
 	@ReactMethod
 	public void writeWithoutResponse(String deviceUUID, String serviceUUID, String characteristicUUID, String message, Integer maxByteSize, Integer queueSleepTime, Callback callback) {
-		Log.d(LOG_TAG, "Write without response to: " + deviceUUID);
+		Log.d(LOG_TAG, "Write without response to: " + deviceUUID + " service: " + UUIDHelper.uuidFromString(serviceUUID) + " characteristic " +  UUIDHelper.uuidFromString(characteristicUUID));
 
 		Peripheral peripheral = peripherals.get(deviceUUID);
 		if (peripheral != null){
