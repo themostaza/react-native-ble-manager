@@ -66,9 +66,9 @@ class BleManager {
     maxByteSize,
     queueSleepTime
   ) {
-    /*if (maxByteSize == null) {
-      maxByteSize = 20;
-    }*/
+    if (maxByteSize == null) {
+      maxByteSize = 20000;
+    }
     if (queueSleepTime == null) {
       queueSleepTime = 10;
     }
