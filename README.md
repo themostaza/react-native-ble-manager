@@ -499,6 +499,22 @@ NativeAppEventEmitter.addListener(
 );
 ```
 
+###  BleManagerDidUpdateScanState
+The BLE scan change state.
+
+__Arguments__
+- `state` - `String` - the new BLE state ('on'/'off').
+
+__Examples__
+```js
+NativeAppEventEmitter.addListener(
+    'BleManagerDidUpdateScanState',
+    (args) => {
+        // The new state: args.state
+    }
+);
+```
+
 ###  BleManagerDiscoverPeripheral
 The scanning find a new peripheral.
 
@@ -524,6 +540,13 @@ __Arguments__
 - `peripheral` - `String` - the id of the peripheral
 - `characteristic` - `String` - the UUID of the characteristic
 - `value` - `String` - the read value in Hex format
+
+###  BleManagerDidReceivedData
+The transfer serivce notify a new message.
+
+__Arguments__
+- `id` - `String` - the id of the peripheral
+- `data` - `String` - the message in Hex format
 
 ###  BleManagerConnectPeripheral
 A peripheral was connected.
