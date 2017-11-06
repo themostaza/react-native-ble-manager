@@ -205,10 +205,11 @@ __Arguments__
 - `serviceUUIDs` - `Array of String` - the UUIDs of the services to looking for. On Android the filter works only for 5.0 or newer.
 - `seconds` - `Integer` - the amount of seconds to scan.
 - `allowDuplicates` - `Boolean` - [iOS only] allow duplicates in device scanning
+- `useLegacyScan` - `Boolean` - [Android only] use a legacy scan method, useful for problematic devices
 
 __Examples__
 ```js
-BleManager.scan([], 5, true)
+BleManager.scan([], 5, true, false)
   .then(() => {
     // Success code
     console.log('Scan started');
@@ -296,6 +297,14 @@ __Examples__
 BleManager.checkState();
 ```
 
+### checkScanState()
+Force the module to check the scan state of BLE and trigger a BleManagerDidUpdateScanState event.
+
+__Examples__
+```js
+BleManager.checkScanState();
+```
+
 ### startNotification(peripheralId, serviceUUID, characteristicUUID)
 Start the notification on the specified characteristic.
 Returns a `Promise` object.
@@ -326,6 +335,27 @@ __Arguments__
 - `peripheralId` - `String` - the id/mac address of the peripheral.
 - `serviceUUID` - `String` - the UUID of the service.
 - `characteristicUUID` - `String` - the UUID of the characteristic.
+
+### startTransferService(serviceUUID, characteristicUUID)
+Enable a service to receive message from BLE pheripherals, a new message trigger a BleManagerDidReceivedData event.
+Returns a `Promise` object.
+
+__Arguments__
+- `serviceUUID` - `String` - the UUID of the service.
+- `characteristicUUID` - `String` - the UUID of the characteristic.
+
+__Examples__
+```js
+BleManager.startTransferService('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
+  .then(() => {
+    // Success code
+    console.log('Transfer service enabled ');
+  })
+  .catch((error) => {
+    // Failure code
+    console.log(error);
+  });
+```
 
 ### read(peripheralId, serviceUUID, characteristicUUID)
 Read the current value of the specified characteristic.
