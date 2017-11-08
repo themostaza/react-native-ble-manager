@@ -203,7 +203,7 @@ Returns a `Promise` object.
 
 __Arguments__
 - `serviceUUIDs` - `Array of String` - the UUIDs of the services to looking for. On Android the filter works only for 5.0 or newer.
-- `seconds` - `Integer` - the amount of seconds to scan.
+- `seconds` - `Integer` - the amount of seconds to scan, 0 to not stop automatically. (0 is default)
 - `allowDuplicates` - `Boolean` - [iOS only] allow duplicates in device scanning
 - `useLegacyScan` - `Boolean` - [Android only] use a legacy scan method, useful for problematic devices
 
@@ -533,7 +533,7 @@ NativeAppEventEmitter.addListener(
 The BLE scan change state.
 
 __Arguments__
-- `state` - `String` - the new BLE state ('on'/'off').
+- `state` - `String` - the new BLE scan state ('on'/'off').
 
 __Examples__
 ```js
