@@ -551,6 +551,7 @@ The scanning find a new peripheral.
 __Arguments__
 - `id` - `String` - the id of the peripheral
 - `name` - `String` - the name of the peripheral
+- `advertising` - `JSON` - the advertising data payload, the structure is different between Android and iOS
 
 __Examples__
 ```js
@@ -559,6 +560,7 @@ NativeAppEventEmitter.addListener(
     (args) => {
         // The id: args.id
         // The name: args.name
+        // The advertising data: args.advertising
     }
 );
 ```
