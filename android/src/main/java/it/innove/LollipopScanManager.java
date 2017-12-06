@@ -1,6 +1,5 @@
 package it.innove;
 
-
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
@@ -34,26 +33,34 @@ public class LollipopScanManager extends ScanManager {
 		scanSessionId.incrementAndGet();
 
 		getBluetoothAdapter().getBluetoothLeScanner().stopScan(mScanCallback);
-        setScanState(false);
-        if (callback != null) callback.invoke();
+		setScanState(false);
+		if (callback != null)
+			callback.invoke();
 	}
 
 	@Override
-	public void scan(ReadableArray serviceUUIDs, final int scanSeconds, Callback callback) {
-		ScanSettings settings = new ScanSettings.Builder().build();
+	public void scan(ReadableArray serviceUUIDs, final int scanSeconds, ReadableMap options, Callback callback) {
+		ScanSettings.Builder scanSettingsBuilder = new ScanSettings.Builder();
 		List<ScanFilter> filters = new ArrayList<>();
 
+		scanSettingsBuilder.setScanMode(options.getInt("scanMode"));
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			scanSettingsBuilder.setNumOfMatches(options.getInt("numberOfMatches"));
+			scanSettingsBuilder.setMatchMode(options.getInt("matchMode"));
+		}
+
 		if (serviceUUIDs.size() > 0) {
-			for(int i = 0; i < serviceUUIDs.size(); i++){
-				ScanFilter.Builder builder = new ScanFilter.Builder();
-				builder.setServiceUuid(new ParcelUuid(UUIDHelper.uuidFromString(serviceUUIDs.getString(i))));
-				filters.add(builder.build());
+			for (int i = 0; i < serviceUUIDs.size(); i++) {
+				ScanFilter filter = new ScanFilter.Builder()
+						.setServiceUuid(new ParcelUuid(UUIDHelper.uuidFromString(serviceUUIDs.getString(i)))).build();
+				filters.add(filter);
 				Log.d(bleManager.LOG_TAG, "Filter service: " + serviceUUIDs.getString(i));
 			}
 		}
 
-		getBluetoothAdapter().getBluetoothLeScanner().startScan(filters, settings, mScanCallback);
-        setScanState(true);
+		getBluetoothAdapter().getBluetoothLeScanner().startScan(filters, scanSettingsBuilder.build(), mScanCallback);
+		setScanState(true);
 		if (scanSeconds > 0) {
 			Thread thread = new Thread() {
 				private int currentScanSession = scanSessionId.incrementAndGet();
@@ -72,9 +79,9 @@ public class LollipopScanManager extends ScanManager {
 							BluetoothAdapter btAdapter = getBluetoothAdapter();
 							// check current scan session was not stopped
 							if (scanSessionId.intValue() == currentScanSession) {
-								if(btAdapter.getState() == BluetoothAdapter.STATE_ON) {
+								if (btAdapter.getState() == BluetoothAdapter.STATE_ON) {
 									btAdapter.getBluetoothLeScanner().stopScan(mScanCallback);
-                                    setScanState(false);
+									setScanState(false);
 								}
 								WritableMap map = Arguments.createMap();
 								bleManager.sendEvent("BleManagerStopScan", map);
@@ -100,23 +107,25 @@ public class LollipopScanManager extends ScanManager {
 					Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + result.getDevice().getName());
 					String address = result.getDevice().getAddress();
 
-                    Peripheral peripheral = bleManager.peripherals.get(address);
+					Peripheral peripheral = bleManager.peripherals.get(address);
 					if (peripheral == null) {
-						BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-                        peripheral = new Peripheral(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes(), reactContext, manager);
+						BluetoothManager manager = (BluetoothManager) context
+								.getSystemService(Context.BLUETOOTH_SERVICE);
+						peripheral = new Peripheral(result.getDevice(), result.getRssi(),
+								result.getScanRecord().getBytes(), reactContext, manager);
 						bleManager.peripherals.put(address, peripheral);
 					} else {
 						peripheral.updateRssi(result.getRssi());
-                        peripheral.updateAdvertisingData(result.getScanRecord().getBytes());
+						peripheral.updateAdvertisingData(result.getScanRecord().getBytes());
 					}
 
-                    try {
-                        Bundle bundle = BundleJSONConverter.convertToBundle(peripheral.asJSONObject());
-                        WritableMap map = Arguments.fromBundle(bundle);
-                        bleManager.sendEvent("BleManagerDiscoverPeripheral", map);
-                    } catch (JSONException ignored) {
+					try {
+						Bundle bundle = BundleJSONConverter.convertToBundle(peripheral.asJSONObject());
+						WritableMap map = Arguments.fromBundle(bundle);
+						bleManager.sendEvent("BleManagerDiscoverPeripheral", map);
+					} catch (JSONException ignored) {
 
-                    }
+					}
 				}
 			});
 		}
@@ -127,6 +136,8 @@ public class LollipopScanManager extends ScanManager {
 
 		@Override
 		public void onScanFailed(final int errorCode) {
+			WritableMap map = Arguments.createMap();
+			bleManager.sendEvent("BleManagerStopScan", map);
 		}
 	};
 }
