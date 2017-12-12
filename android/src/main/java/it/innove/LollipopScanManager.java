@@ -97,12 +97,13 @@ public class LollipopScanManager extends ScanManager {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + result.getDevice().getName());
+					Log.i(bleManager.LOG_TAG, "DiscoverPeripheral1: " + result.getDevice().getName() + " -  " + result.getScanRecord().toString());
 					String address = result.getDevice().getAddress();
 
                     Peripheral peripheral = bleManager.peripherals.get(address);
 					if (peripheral == null) {
 						BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+
                         peripheral = new Peripheral(result.getDevice(), result.getRssi(), result.getScanRecord().getBytes(), reactContext, manager);
 						bleManager.peripherals.put(address, peripheral);
 					} else {
