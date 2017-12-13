@@ -95,7 +95,7 @@ public class Peripheral extends BluetoothGattCallback {
 		if (!connected) {
 			BluetoothDevice device = getDevice();
 			this.connectCallback = callback;
-			gatt = device.connectGatt(activity, false, this);
+			gatt = device.connectGatt(activity, true, this);
 		}else{
 			if (gatt != null) {
 				WritableMap map = this.asWritableMap(gatt);
