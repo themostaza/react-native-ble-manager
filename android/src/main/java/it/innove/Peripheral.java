@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.le.ScanRecord;
+import android.os.Build;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
@@ -42,6 +43,7 @@ public class Peripheral extends BluetoothGattCallback {
 
 	private static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
 	public static final String LOG_TAG = "RNBleManagerPeripheral";
+	private static final int otapMTU = 247;
 
 	private BluetoothDevice device;
 	private byte[] advertisingData;
@@ -55,12 +57,14 @@ public class Peripheral extends BluetoothGattCallback {
 	private Callback readCallback;
 	private Callback readRSSICallback;
 	private Callback writeCallback;
+	private Callback mtuCallback;
 
 	private List<byte[]> writeQueue = new ArrayList<>();
 
+	private boolean hasCorrectMTU = false;
 
-    private BluetoothManager mBluetoothManager;
-    public BluetoothGattServer mBluetoothGattServer;
+
+
 
 	public Peripheral(BluetoothDevice device, int advertisingRSSI, byte[] scanRecord, ReactContext reactContext, BluetoothManager bluetoothManager) {
 
@@ -68,14 +72,12 @@ public class Peripheral extends BluetoothGattCallback {
 		this.advertisingRSSI = advertisingRSSI;
 		this.advertisingData = scanRecord;
 		this.reactContext = reactContext;
-        this.mBluetoothManager = bluetoothManager;
 
 	}
 
 	public Peripheral(BluetoothDevice device, ReactContext reactContext, BluetoothManager bluetoothManager) {
 		this.device = device;
 		this.reactContext = reactContext;
-        this.mBluetoothManager = bluetoothManager;
 	}
 
 	private void sendEvent(String eventName, @Nullable WritableMap params) {
@@ -96,6 +98,7 @@ public class Peripheral extends BluetoothGattCallback {
 			BluetoothDevice device = getDevice();
 			this.connectCallback = callback;
 			gatt = device.connectGatt(activity, true, this);
+
 		}else{
 			if (gatt != null) {
 				WritableMap map = this.asWritableMap(gatt);
@@ -364,6 +367,7 @@ public class Peripheral extends BluetoothGattCallback {
 		return b & 0xFF;
 	}
 
+
 	@Override
 	public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
 		super.onCharacteristicChanged(gatt, characteristic);
@@ -447,6 +451,18 @@ public class Peripheral extends BluetoothGattCallback {
 
 			readRSSICallback = null;
 		}
+	}
+
+	@Override
+	public void onMtuChanged(BluetoothGatt gatt, int mtuSize, int status) {
+		Log.e(LOG_TAG, "onMtuChanged : \nmtuSize : " + mtuSize + "\nstatus : " + status);
+		if (this.otapMTU == mtuSize && status == BluetoothGatt.GATT_SUCCESS ) {
+			mtuCallback.invoke(null, true);
+			hasCorrectMTU = true;
+		} else {
+			mtuCallback.invoke(null, false);
+		}
+		super.onMtuChanged(gatt, mtuSize, status);
 	}
 
 	private void setNotify(UUID serviceUUID, UUID characteristicUUID, Boolean notify, Callback callback){
@@ -581,8 +597,23 @@ public class Peripheral extends BluetoothGattCallback {
 		readRSSICallback = callback;
 
 		if (!gatt.readRemoteRssi()) {
-			readCallback = null;
+			readRSSICallback = null;
 			callback.invoke("Read RSSI failed", null);
+		}
+	}
+
+	public void setMTU(Callback callback) {
+		if (gatt == null) {
+			callback.invoke("BluetoothGatt is null", null);
+			return;
+		}
+
+		mtuCallback = callback;
+
+		if (!hasCorrectMTU && Build.VERSION.SDK_INT >= 21 ) {
+			gatt.requestMtu(this.otapMTU);
+		} else {
+			mtuCallback.invoke(null, false);
 		}
 	}
 

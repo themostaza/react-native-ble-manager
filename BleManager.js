@@ -36,6 +36,19 @@ class BleManager {
     });
   }
 
+  negotiateMTU(peripheralId) {
+    if (React.Platform.OS === "ios") return Promise.resolve(true);
+    return new Promise((fulfill, reject) => {
+      bleManager.negotiateMTU(peripheralId, (error, rssi) => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill(rssi);
+        }
+      });
+    });
+  }
+
   write(peripheralId, serviceUUID, characteristicUUID, data, maxByteSize) {
     if (maxByteSize == null) {
       maxByteSize = 20;

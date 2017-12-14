@@ -178,6 +178,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 				BluetoothDevice device = bluetoothAdapter.getRemoteDevice(peripheralUUID);
 				peripheral = new Peripheral(device, reactContext, manager);
 				peripherals.put(peripheralUUID, peripheral);
+
 			} else {
 				callback.invoke("Invalid peripheral uuid");
 				return;
@@ -262,6 +263,16 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		Peripheral peripheral = peripherals.get(deviceUUID);
 		if (peripheral != null){
 			peripheral.readRSSI(callback);
+		} else
+			callback.invoke("Peripheral not found", null);
+	}
+
+	@ReactMethod
+	public void negotiateMTU(String deviceUUID,  Callback callback) {
+		Log.d(LOG_TAG, "Negotiate MTU for: " + deviceUUID);
+		Peripheral peripheral = peripherals.get(deviceUUID);
+		if (peripheral != null){
+			peripheral.setMTU(callback);
 		} else
 			callback.invoke("Peripheral not found", null);
 	}

@@ -1,6 +1,6 @@
 {
   "name": "react-native-ble-manager",
-  "version": "3.1.1",
+  "version": "3.1.1-mostaza.1",
   "description": "A BLE module for react native.",
   "main": "BleManager",
   "repository": {
@@ -11,8 +11,8 @@
     "url": "https://github.com/innoveit/react-native-ble-manager/issues"
   },
   "keywords": [
-  	"react-native",
-  	"android",
+    "react-native",
+    "android",
     "ios",
     "ble",
     "bluetooth",
