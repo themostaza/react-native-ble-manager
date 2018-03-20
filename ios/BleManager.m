@@ -63,12 +63,19 @@ RCT_EXPORT_MODULE();
 }
 
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
+  NSString *key = [self keyForPeripheral: peripheral andCharacteristic:characteristic];
   if (error) {
     NSLog(@"Error in didUpdateNotificationStateForCharacteristic: %@", error);
+    
+    RCTResponseSenderBlock notificationCallback = [notificationCallbacks objectForKey:key];
+    if(notificationCallback) {
+      NSString *errorNotification = [NSString stringWithFormat:@"Pairing code not valid"];
+      notificationCallback(@[errorNotification]);
+      [notificationCallbacks removeObjectForKey:key];
+    }
+   
     return;
   }
-  
-  NSString *key = [self keyForPeripheral: peripheral andCharacteristic:characteristic];
   
   if (characteristic.isNotifying) {
     NSLog(@"Notification began on %@", characteristic.UUID);
