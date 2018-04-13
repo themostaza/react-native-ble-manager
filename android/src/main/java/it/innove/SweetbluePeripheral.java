@@ -1,21 +1,16 @@
 package it.innove;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothGattServer;
-import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
-import android.bluetooth.le.ScanRecord;
+import android.bluetooth.BluetoothManager;
 import android.os.Build;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
-import android.content.Context;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -26,26 +21,28 @@ import com.facebook.react.modules.core.RCTNativeAppEventEmitter;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONArray;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
+
+import com.idevicesinc.sweetblue.BleDevice;
+import com.idevicesinc.sweetblue.BleDeviceState;
 
 /**
  * Peripheral wraps the BluetoothDevice and provides methods to convert to JSON.
  */
-public class Peripheral extends BluetoothGattCallback {
+public class SweetbluePeripheral extends BluetoothGattCallback {
 
 	private static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
 	public static final String LOG_TAG = "RNBleManagerPeripheral";
 	private static final int otapMTU = 247;
 
-	private BluetoothDevice device;
+	private BleDevice device;
 	private byte[] advertisingData;
 	private int advertisingRSSI;
 	private boolean connected = false;
@@ -66,7 +63,7 @@ public class Peripheral extends BluetoothGattCallback {
 
 
 
-	public Peripheral(BluetoothDevice device, int advertisingRSSI, byte[] scanRecord, ReactContext reactContext, BluetoothManager bluetoothManager) {
+	public SweetbluePeripheral(BleDevice device, int advertisingRSSI, byte[] scanRecord, ReactContext reactContext) {
 
 		this.device = device;
 		this.advertisingRSSI = advertisingRSSI;
@@ -75,10 +72,10 @@ public class Peripheral extends BluetoothGattCallback {
 
 	}
 
-	public Peripheral(BluetoothDevice device, ReactContext reactContext, BluetoothManager bluetoothManager) {
+	/*public SweetbluePeripheral(BleDevice device, ReactContext reactContext) {
 		this.device = device;
 		this.reactContext = reactContext;
-	}
+	}*/
 
 	private void sendEvent(String eventName, @Nullable WritableMap params) {
 		reactContext
@@ -86,26 +83,68 @@ public class Peripheral extends BluetoothGattCallback {
 				.emit(eventName, params);
 	}
 
-	private void sendConnectionEvent(BluetoothDevice device, String eventName) {
+	private void sendConnectionEvent(BleDevice device, String eventName) {
 		WritableMap map = Arguments.createMap();
-		map.putString("peripheral", device.getAddress());
+		map.putString("peripheral", device.getMacAddress());
 		sendEvent(eventName, map);
-		Log.d(LOG_TAG, "Peripheral event (eventName):" + device.getAddress());
+		Log.d(LOG_TAG, "Peripheral event (eventName):" + device.getMacAddress());
 	}
 
-	public void connect(Callback callback, Activity activity) {
-		if (!connected) {
-			BluetoothDevice device = getDevice();
-			this.connectCallback = callback;
-			gatt = device.connectGatt(activity, true, this);
+	public void connect(final Callback callback, Activity activity) {
+        Log.d(LOG_TAG, "Connecting...");
+        device.connect(new BleDevice.StateListener()
+        {
+            @Override public void onEvent(StateEvent stateEvent) {
+                gatt = device.getNativeGatt();
+                // Check if the device entered the INITIALIZED state (this is the "true" connected state where the device is ready to be operated upon).
+                if (stateEvent.didEnter(BleDeviceState.INITIALIZED)) {
+                    Log.i(LOG_TAG, stateEvent.device().getName_debug() + " just initialized!");
+                        connected = true;
+                        gatt.discoverServices();
+                        sendConnectionEvent(device, "BleManagerConnectPeripheral");
+                    WritableMap map = asWritableMap(gatt);
+                    callback.invoke(null, map);
 
-		}else{
-			if (gatt != null) {
-				WritableMap map = this.asWritableMap(gatt);
-				callback.invoke(null, map);
-			} else
-				callback.invoke("BluetoothGatt is null");
-		}
+                }
+                if (stateEvent.didEnter(BleDeviceState.DISCONNECTED) && !device.is(BleDeviceState.RETRYING_BLE_CONNECTION)) {
+                    if (connected) {
+                        connected = false;
+
+                        if (gatt != null) {
+                            gatt.disconnect();
+                            gatt.close();
+                            gatt = null;
+                        }
+                    }
+
+                    sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
+
+                    if (callback != null) {
+                        callback.invoke("Connection error");
+                    }
+                }
+            }
+        }, new BleDevice.DefaultConnectionFailListener()
+        {
+            @Override
+            public Please onEvent(ConnectionFailEvent e)
+            {
+                // Like in the BluetoothEnabler callback higher up in this class, we want to allow the default implementation do what it needs to do
+                // However, in this case, we check the resulting Please that is returned to determine if we need to do anything yet.
+                Please please = super.onEvent(e);
+
+                // If the returned please is NOT a retry, then SweetBlue has given up trying to connect, so let's print an error log
+                if (!please.isRetry())
+                {
+                    Log.e(LOG_TAG, e.device().getName_debug() + " failed to connect with a status of " + e.status().name());
+                    callback.invoke("Connection error");
+                }
+
+
+
+                return please;
+            }
+        } );
 	}
 
 	public void disconnect() {
@@ -131,8 +170,8 @@ public class Peripheral extends BluetoothGattCallback {
 		JSONObject json = new JSONObject();
 
 		try {
-			json.put("name", device.getName());
-			json.put("id", device.getAddress()); // mac address
+			json.put("name", device.getName_native());
+			json.put("id", device.getMacAddress()); // mac address
 			json.put("advertising", byteArrayToJSON(advertisingData));
 			// TODO real RSSI if we have it, else
 			json.put("rssi", advertisingRSSI);
@@ -149,8 +188,8 @@ public class Peripheral extends BluetoothGattCallback {
 		WritableMap map = Arguments.createMap();
 
 		try {
-			map.putString("name", device.getName());
-			map.putString("id", device.getAddress()); // mac address
+			map.putString("name", device.getName_native());
+			map.putString("id", device.getMacAddress()); // mac address
 			map.putMap("advertising", byteArrayToWritableMap(advertisingData));
 			map.putInt("rssi", advertisingRSSI);
 		} catch (Exception e) { // this shouldn't happen
@@ -253,7 +292,6 @@ public class Peripheral extends BluetoothGattCallback {
 				case 0x06:// Partial list of 128-bit UUIDs
 				case 0x07:// Complete list of 128-bit UUIDs
 					// Loop through the advertised 128-bit UUID's.
-					Log.d(LOG_TAG, "ASD ");
 					while (len >= 16) {
 						try {
 							// Wrap the advertised bits and order them.
@@ -294,7 +332,7 @@ public class Peripheral extends BluetoothGattCallback {
 		return connected;
 	}
 
-	public BluetoothDevice getDevice() {
+	public BleDevice getDevice() {
 		return device;
 	}
 
@@ -316,7 +354,8 @@ public class Peripheral extends BluetoothGattCallback {
 	@Override
 	public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
-		Log.d(LOG_TAG, "onConnectionStateChange from " + status + " to "+ newState + " on peripheral:" + device.getAddress());
+		Log.d(LOG_TAG, "onConnectionStateChange from " + status + " to "+ newState + " on " +
+                "peripheral:" + device.getMacAddress());
 
 		this.gatt = gatt;
 
@@ -368,10 +407,11 @@ public class Peripheral extends BluetoothGattCallback {
 		super.onCharacteristicChanged(gatt, characteristic);
 
 		byte[] dataValue = characteristic.getValue();
-		Log.d(LOG_TAG, "Read: " + BleManager.bytesToHex(dataValue) + " from peripheral: " + device.getAddress());
+		Log.d(LOG_TAG, "Read: " + BleManager.bytesToHex(dataValue) + " from peripheral: " +
+                device.getMacAddress());
 
 		WritableMap map = Arguments.createMap();
-		map.putString("peripheral", device.getAddress());
+		map.putString("peripheral", device.getMacAddress());
 		map.putString("characteristic", characteristic.getUuid().toString());
 		map.putString("service", characteristic.getService().getUuid().toString());
 		map.putString("value", BleManager.bytesToHex(dataValue));
@@ -648,85 +688,24 @@ public class Peripheral extends BluetoothGattCallback {
 		}
 	}
 
-	public void write(UUID serviceUUID, UUID characteristicUUID, byte[] data, Integer maxByteSize, Integer queueSleepTime, Callback callback, int writeType) {
+	public void write(UUID serviceUUID, UUID characteristicUUID, byte[] data, Integer
+            maxByteSize, Integer queueSleepTime, final Callback callback, int writeType) {
 		if (gatt == null) {
 			callback.invoke("BluetoothGatt is null");
 		} else {
-			BluetoothGattService service = gatt.getService(serviceUUID);
-			BluetoothGattCharacteristic characteristic = findWritableCharacteristic(service, characteristicUUID, writeType);
-
-			if (characteristic == null) {
-				callback.invoke("Characteristic " + characteristicUUID + " not found.");
-			} else {
-				characteristic.setWriteType(writeType);
-
-				if (writeQueue.size() > 0) {
-					callback.invoke("You have already an queued message");
-				}
-
-				if ( writeCallback != null) {
-					callback.invoke("You're already writing");
-				}
-
-				if (writeQueue.size() == 0 && writeCallback == null) {
-
-					if (BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT == writeType) {
-						writeCallback = callback;
-					}
-
-					if (data.length > maxByteSize) {
-						int dataLength = data.length;
-						int count = 0;
-						byte[] firstMessage = null;
-						List<byte[]> splittedMessage = new ArrayList<>();
-
-						while (count < dataLength && (dataLength - count > maxByteSize)) {
-							if (count == 0) {
-								firstMessage = Arrays.copyOfRange(data, count, count + maxByteSize);
-							} else {
-								byte[] splitMessage = Arrays.copyOfRange(data, count, count + maxByteSize);
-								splittedMessage.add(splitMessage);
-							}
-							count += maxByteSize;
-						}
-						if (count < dataLength) {
-							// Other bytes in queue
-							byte[] splitMessage = Arrays.copyOfRange(data, count, data.length);
-							splittedMessage.add(splitMessage);
-						}
-
-						if (BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT == writeType) {
-							writeQueue.addAll(splittedMessage);
-							doWrite(characteristic, firstMessage);
-						} else {
-							try {
-								doWrite(characteristic, firstMessage);
-								Thread.sleep(queueSleepTime);
-								for(byte[] message : splittedMessage) {
-									doWrite(characteristic, message);
-									Thread.sleep(queueSleepTime);
-								}
-								callback.invoke();
-							} catch (InterruptedException e) {
-								callback.invoke("Error during writing");
-							}
-						}
-					} else {
-						characteristic.setValue(data);
-
-						if (gatt.writeCharacteristic(characteristic)) {
-							Log.d(LOG_TAG, "Write completed");
-							if (BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE == writeType) {
-								callback.invoke();
-							}
-						} else {
-							callback.invoke("Write failed");
-							writeCallback = null;
-						}
-					}
-				}
-			}
-		}
+            device.write(serviceUUID, characteristicUUID, data, new BleDevice.ReadWriteListener() {
+                @Override
+                public void onEvent(ReadWriteEvent e) {
+                    Log.d(LOG_TAG, "ReadWriteEvent " + e.toString());
+                    if (e.wasSuccess()) {
+                        Log.d(LOG_TAG, "Write completed");
+                        callback.invoke();
+                    } else {
+                        callback.invoke("Error ");
+                    }
+                }
+            });
+        }
 
 	}
 

@@ -34,9 +34,11 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	private ReactApplicationContext reactContext;
 	private Callback enableBluetoothCallback;
 	private ScanManager scanManager;
+	private SweetblueScanManager sbScanManager;
 
 	// key is the MAC Address
 	public Map<String, Peripheral> peripherals = new LinkedHashMap<>();
+    public Map<String, SweetbluePeripheral> sbPeripherals = new LinkedHashMap<>();
 	// scan session id
 
 
@@ -45,13 +47,15 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		context = reactContext;
 		this.reactContext = reactContext;
 		reactContext.addActivityEventListener(this);
-		if (Build.VERSION.SDK_INT >= LOLLIPOP) {
+		/*if (Build.VERSION.SDK_INT >= LOLLIPOP) {
             Log.d(LOG_TAG, "BleManager lollipop created");
 			scanManager = new LollipopScanManager(reactContext, this);
 		} else {
             Log.d(LOG_TAG, "BleManager legacy created");
 			scanManager = new LegacyScanManager(reactContext, this);
-		}
+		}*/
+        Log.d(LOG_TAG, "SweetblueScanManager created");
+        sbScanManager =  new SweetblueScanManager(reactContext, this);
 	}
 
 	@Override
@@ -127,7 +131,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		}
 
         // switch scan manager version if needed
-        if (useLegacyScan && scanManager instanceof LollipopScanManager) {
+        /*if (useLegacyScan && scanManager instanceof LollipopScanManager) {
             Log.d(LOG_TAG, "Replace ScanManager with legacy one");
             scanManager.stopScan(null);
             // TODO create the new scan manager only when the older one is stopped
@@ -141,13 +145,15 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
             }
         }
 
-		scanManager.scan(serviceUUIDs, scanSeconds, callback);
+		scanManager.scan(serviceUUIDs, scanSeconds, callback);*/
+
+        sbScanManager.scan(serviceUUIDs, scanSeconds, callback);
 	}
 
 	@ReactMethod
 	public void stopScan(Callback callback) {
 		Log.d(LOG_TAG, "Stop scan");
-		if (getBluetoothAdapter() == null) {
+		/*if (getBluetoothAdapter() == null) {
 			Log.d(LOG_TAG, "No bluetooth support");
 			callback.invoke("No bluetooth support");
 			return;
@@ -156,21 +162,25 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 			callback.invoke("Bluetooth not enabled");
 			return;
 		}
-		scanManager.stopScan(callback);
+		scanManager.stopScan(callback);*/
+
+        sbScanManager.stopScan(callback);
 	}
 
 	@ReactMethod
 	public void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
-		scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
+		//scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
+		sbScanManager.startTransferService(serviceUUID, characteristicUUID, callback);
 	}
 
 	@ReactMethod
 	public void connect(String peripheralUUID, Callback callback) {
 		Log.d(LOG_TAG, "Connect to: " + peripheralUUID );
 
-		Peripheral peripheral = peripherals.get(peripheralUUID);
+		//Peripheral peripheral = peripherals.get(peripheralUUID);
+        SweetbluePeripheral peripheral = sbPeripherals.get(peripheralUUID);
 		if (peripheral == null) {
-			if (peripheralUUID != null) {
+			/*if (peripheralUUID != null) {
 				peripheralUUID = peripheralUUID.toUpperCase();
 			}
 			if (BluetoothAdapter.checkBluetoothAddress(peripheralUUID)) {
@@ -179,10 +189,10 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 				peripheral = new Peripheral(device, reactContext, manager);
 				peripherals.put(peripheralUUID, peripheral);
 
-			} else {
+			} else {*/
 				callback.invoke("Invalid peripheral uuid");
 				return;
-			}
+			//}
 		}
 		peripheral.connect(callback, getCurrentActivity());
 	}
@@ -202,12 +212,14 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	@ReactMethod
 	public void startNotification(String deviceUUID, String serviceUUID, String characteristicUUID, Callback callback) {
 		Log.d(LOG_TAG, "startNotification");
+		//TODO
+		callback.invoke();
 
-		Peripheral peripheral = peripherals.get(deviceUUID);
+		/*Peripheral peripheral = peripherals.get(deviceUUID);
 		if (peripheral != null){
 			peripheral.registerNotify(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), callback);
 		} else
-			callback.invoke("Peripheral not found");
+			callback.invoke("Peripheral not found");*/
 	}
 
 	@ReactMethod
@@ -238,7 +250,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	public void writeWithoutResponse(String deviceUUID, String serviceUUID, String characteristicUUID, String message, Integer maxByteSize, Integer queueSleepTime, Callback callback) {
 		Log.d(LOG_TAG, "Write without response to: " + deviceUUID + " service: " + UUIDHelper.uuidFromString(serviceUUID) + " characteristic " +  UUIDHelper.uuidFromString(characteristicUUID));
 
-		Peripheral peripheral = peripherals.get(deviceUUID);
+		SweetbluePeripheral peripheral = sbPeripherals.get(deviceUUID);
 		if (peripheral != null){
 			byte[] decoded = Base64.decode(message.getBytes(), Base64.DEFAULT);
 			Log.d(LOG_TAG, "Message(" + decoded.length + "): " + bytesToHex(decoded));
@@ -302,7 +314,8 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
     @ReactMethod
     public void checkScanState(){
         Log.d(LOG_TAG, "checkScanState");
-		scanManager.notifyScanState();
+		//scanManager.notifyScanState();
+        sbScanManager.notifyScanState();
     }
 
 	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
