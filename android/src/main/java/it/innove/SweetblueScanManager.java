@@ -175,9 +175,6 @@ public class SweetblueScanManager {
         {
             @Override public void onEvent(StateEvent stateEvent)
             {
-
-
-
                 // Check if the device entered the INITIALIZED state (this is the "true" connected state where the device is ready to be operated upon).
                 if(stateEvent.didEnter(BleDeviceState.INITIALIZED))
                 {
@@ -260,6 +257,12 @@ public class SweetblueScanManager {
         BleService service = new BleService(UUID.fromString(serviceUUID),characteristic);
 
         bleServer.addService(service);
+        callback.invoke();
+    }
+
+    protected void stopTransferService(Callback callback) {
+        bleServer = m_bleManager.getServer(new ServerIncomingListener());
+        bleServer.disconnect();
         callback.invoke();
     }
 

@@ -174,6 +174,12 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	}
 
 	@ReactMethod
+	public void stopTransferService(Callback callback) {
+		//scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
+		sbScanManager.stopTransferService(callback);
+	}
+
+	@ReactMethod
 	public void connect(String peripheralUUID, Callback callback) {
 		Log.d(LOG_TAG, "Connect to: " + peripheralUUID );
 
@@ -201,7 +207,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	public void disconnect(String peripheralUUID, Callback callback) {
 		Log.d(LOG_TAG, "Disconnect from: " + peripheralUUID);
 
-		Peripheral peripheral = peripherals.get(peripheralUUID);
+        SweetbluePeripheral peripheral = sbPeripherals.get(peripheralUUID);
 		if (peripheral != null){
 			peripheral.disconnect();
 			callback.invoke();

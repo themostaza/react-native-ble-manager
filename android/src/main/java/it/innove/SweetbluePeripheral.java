@@ -60,6 +60,8 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 
 	private boolean hasCorrectMTU = false;
 
+	Boolean isConnecting = false;
+
 
 
 
@@ -92,38 +94,46 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 
 	public void connect(final Callback callback, Activity activity) {
         Log.d(LOG_TAG, "Connecting...");
-        device.connect(new BleDevice.StateListener()
-        {
-            @Override public void onEvent(StateEvent stateEvent) {
-                gatt = device.getNativeGatt();
-                // Check if the device entered the INITIALIZED state (this is the "true" connected state where the device is ready to be operated upon).
-                if (stateEvent.didEnter(BleDeviceState.INITIALIZED)) {
-                    Log.i(LOG_TAG, stateEvent.device().getName_debug() + " just initialized!");
-                        connected = true;
-                        gatt.discoverServices();
-                        sendConnectionEvent(device, "BleManagerConnectPeripheral");
-                    WritableMap map = asWritableMap(gatt);
-                    callback.invoke(null, map);
-
-                }
-                if (stateEvent.didEnter(BleDeviceState.DISCONNECTED) && !device.is(BleDeviceState.RETRYING_BLE_CONNECTION)) {
-                    if (connected) {
-                        connected = false;
-
-                        if (gatt != null) {
-                            gatt.disconnect();
-                            gatt.close();
-                            gatt = null;
-                        }
+        isConnecting = true;
+        device.connect(new BleDevice.StateListener() {
+			@Override
+			public void onEvent(StateEvent stateEvent) {
+                Log.i(LOG_TAG, stateEvent.device().toString());
+				//gatt = device.getNativeGatt();
+				// Check if the device entered the INITIALIZED state (this is the "true" connected state where the device is ready to be operated upon).
+				if (stateEvent.didEnter(BleDeviceState.INITIALIZED)) {
+                    isConnecting = false;
+					Log.i(LOG_TAG, stateEvent.device().getName_debug() + " just initialized!");
+					connected = true;
+					//gatt.discoverServices();
+					sendConnectionEvent(device, "BleManagerConnectPeripheral");
+					WritableMap map = asWritableMap(gatt);
+					if(callback != null &&isConnecting) {
+                        callback.invoke(null, map);
+                        isConnecting = false;
                     }
 
-                    sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
 
-                    if (callback != null) {
-                        callback.invoke("Connection error");
-                    }
-                }
-            }
+				} else if (stateEvent.didEnter(BleDeviceState.DISCONNECTED) && !device.is(BleDeviceState.RETRYING_BLE_CONNECTION)) {
+				    Log.i(LOG_TAG, stateEvent.device().getName_debug() + " disconnected2");
+				    if (connected) {
+						connected = false;
+
+						/*if (gatt != null) {
+							gatt.disconnect();
+							gatt.close();
+							gatt = null;
+						}*/
+					}
+
+					sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
+
+					if (callback != null && isConnecting) {
+						callback.invoke("Connection error");
+                        isConnecting = false;
+					}
+				}
+		    }
         }, new BleDevice.DefaultConnectionFailListener()
         {
             @Override
@@ -137,7 +147,9 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
                 if (!please.isRetry())
                 {
                     Log.e(LOG_TAG, e.device().getName_debug() + " failed to connect with a status of " + e.status().name());
-                    callback.invoke("Connection error");
+                    if (callback != null && isConnecting) {
+                        callback.invoke("Connection error");
+                    }
                 }
 
 
@@ -149,20 +161,17 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 
 	public void disconnect() {
 		connectCallback = null;
-		connected = false;
-		if (gatt != null) {
-			try {
-				gatt.disconnect();
-				gatt.close();
-				gatt = null;
-				Log.d(LOG_TAG, "Disconnect");
-				sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
-			} catch (Exception e) {
-				sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
-				Log.d(LOG_TAG, "Error on disconnect", e);
-			}
-		}else
-			Log.d(LOG_TAG, "GATT is null");
+
+        try {
+            device.disconnect();
+            //gatt.close();
+            //gatt = null;
+            Log.d(LOG_TAG, "Disconnect");
+
+        } catch (Exception e) {
+            sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
+            Log.d(LOG_TAG, "Error on disconnect", e);
+        }
 	}
 
 	public JSONObject asJSONObject() {
@@ -343,15 +352,15 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 		return gatt.getService(uuid) != null;
 	}
 
-	@Override
+	/*@Override
 	public void onServicesDiscovered(BluetoothGatt gatt, int status) {
 		super.onServicesDiscovered(gatt, status);
 		WritableMap map = this.asWritableMap(gatt);
 		connectCallback.invoke(null, map);
 		connectCallback = null;
-	}
+	}*/
 
-	@Override
+	/*@Override
 	public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
 		Log.d(LOG_TAG, "onConnectionStateChange from " + status + " to "+ newState + " on " +
@@ -387,7 +396,7 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 
 		}
 
-	}
+	}*/
 
 	public void updateRssi(int rssi) {
         advertisingRSSI = rssi;
@@ -690,8 +699,8 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 
 	public void write(UUID serviceUUID, UUID characteristicUUID, byte[] data, Integer
             maxByteSize, Integer queueSleepTime, final Callback callback, int writeType) {
-		if (gatt == null) {
-			callback.invoke("BluetoothGatt is null");
+		if (!device.is(BleDeviceState.INITIALIZED)) {
+			callback.invoke("Device is not connected");
 		} else {
             device.write(serviceUUID, characteristicUUID, data, new BleDevice.ReadWriteListener() {
                 @Override
@@ -711,7 +720,8 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 
 	// Some peripherals re-use UUIDs for multiple characteristics so we need to check the properties
 	// and UUID of all characteristics instead of using service.getCharacteristic(characteristicUUID)
-	private BluetoothGattCharacteristic findWritableCharacteristic(BluetoothGattService service, UUID characteristicUUID, int writeType) {
+	/*private BluetoothGattCharacteristic findWritableCharacteristic(BluetoothGattService service,
+                                                                    UUID characteristicUUID, int writeType) {
 		try {
 			BluetoothGattCharacteristic characteristic = null;
 
@@ -739,7 +749,7 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 			Log.e(LOG_TAG, "Error on findWritableCharacteristic", e);
 			return null;
 		}
-	}
+	}*/
 
 	private String generateHashKey(BluetoothGattCharacteristic characteristic) {
 		return generateHashKey(characteristic.getService().getUuid(), characteristic);
