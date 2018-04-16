@@ -36,7 +36,7 @@ import com.idevicesinc.sweetblue.BleDeviceState;
 /**
  * Peripheral wraps the BluetoothDevice and provides methods to convert to JSON.
  */
-public class SweetbluePeripheral extends BluetoothGattCallback {
+public class SweetbluePeripheral {
 
 	private static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
 	public static final String LOG_TAG = "RNBleManagerPeripheral";
@@ -109,10 +109,9 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 					sendConnectionEvent(device, "BleManagerConnectPeripheral");
 					WritableMap map = asWritableMap(gatt);
 					if(callback != null &&isConnecting) {
+						isConnecting = false;
                         callback.invoke(null, map);
-                        isConnecting = false;
                     }
-
 
 				} else if (stateEvent.didEnter(BleDeviceState.DISCONNECTED) && !device.is(BleDeviceState.RETRYING_BLE_CONNECTION)) {
 				    Log.i(LOG_TAG, stateEvent.device().getName_debug() + " disconnected2");
@@ -129,8 +128,9 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 					sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
 
 					if (callback != null && isConnecting) {
+						isConnecting = false;
 						callback.invoke("Connection error");
-                        isConnecting = false;
+
 					}
 				}
 		    }
@@ -148,6 +148,7 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
                 {
                     Log.e(LOG_TAG, e.device().getName_debug() + " failed to connect with a status of " + e.status().name());
                     if (callback != null && isConnecting) {
+						isConnecting = false;
                         callback.invoke("Connection error");
                     }
                 }
@@ -411,7 +412,7 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 	}
 
 
-	@Override
+	/*@Override
 	public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
 		super.onCharacteristicChanged(gatt, characteristic);
 
@@ -425,9 +426,9 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 		map.putString("service", characteristic.getService().getUuid().toString());
 		map.putString("value", BleManager.bytesToHex(dataValue));
 		sendEvent("BleManagerDidUpdateValueForCharacteristic", map);
-	}
+	}*/
 
-	@Override
+	/*@Override
 	public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
 		super.onCharacteristicRead(gatt, characteristic, status);
 		Log.d(LOG_TAG, "onCharacteristicRead " + characteristic);
@@ -449,9 +450,9 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 
 		}
 
-	}
+	}*/
 
-	@Override
+	/*@Override
 	public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
 		super.onCharacteristicWrite(gatt, characteristic, status);
 		Log.d(LOG_TAG, "onCharacteristicWrite " + characteristic + " status " + status);
@@ -475,14 +476,14 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 			}
 		}else
 			Log.e(LOG_TAG, "No callback on write");
-	}
+	}*/
 
-	@Override
+	/*@Override
 	public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 		super.onDescriptorWrite(gatt, descriptor, status);
-	}
+	}*/
 
-	@Override
+	/*@Override
 	public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
 		super.onReadRemoteRssi(gatt, rssi, status);
 		if (readRSSICallback != null) {
@@ -495,9 +496,9 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 
 			readRSSICallback = null;
 		}
-	}
+	}*/
 
-	@Override
+	/*@Override
 	public void onMtuChanged(BluetoothGatt gatt, int mtuSize, int status) {
 		Log.e(LOG_TAG, "onMtuChanged : \nmtuSize : " + mtuSize + "\nstatus : " + status);
 		if (this.otapMTU == mtuSize && status == BluetoothGatt.GATT_SUCCESS ) {
@@ -507,7 +508,7 @@ public class SweetbluePeripheral extends BluetoothGattCallback {
 			mtuCallback.invoke(null, false);
 		}
 		super.onMtuChanged(gatt, mtuSize, status);
-	}
+	}*/
 
 	private void setNotify(UUID serviceUUID, UUID characteristicUUID, Boolean notify, Callback callback){
 		Log.d(LOG_TAG, "setNotify");

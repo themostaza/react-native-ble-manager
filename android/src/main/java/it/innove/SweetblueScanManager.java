@@ -40,6 +40,7 @@ import com.idevicesinc.sweetblue.BleDevice;
 import com.idevicesinc.sweetblue.BleDeviceState;
 import com.idevicesinc.sweetblue.BleManager;
 import com.idevicesinc.sweetblue.BleManagerConfig;
+import com.idevicesinc.sweetblue.BleNodeConfig;
 import com.idevicesinc.sweetblue.BleServer;
 import com.idevicesinc.sweetblue.BleService;
 import com.idevicesinc.sweetblue.utils.BluetoothEnabler;
@@ -74,6 +75,14 @@ public class SweetblueScanManager {
         config.loggingEnabled = BuildConfig.DEBUG;
         config.runOnMainThread = false;
         config.scanReportDelay = Interval.DISABLED;
+        config.reconnectFilter = new BleNodeConfig.ReconnectFilter()
+        {
+            @Override
+            public Please onEvent(ReconnectEvent e)
+            {
+                return Please.stopRetrying();
+            }
+        };
 
         m_bleManager = BleManager.get(reactContext, config);
         m_bleManager.setListener_Discovery(new SimpleDiscoveryListener());
