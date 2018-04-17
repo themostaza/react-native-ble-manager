@@ -102,7 +102,6 @@ public class SweetbluePeripheral {
 				//gatt = device.getNativeGatt();
 				// Check if the device entered the INITIALIZED state (this is the "true" connected state where the device is ready to be operated upon).
 				if (stateEvent.didEnter(BleDeviceState.INITIALIZED)) {
-                    isConnecting = false;
 					Log.i(LOG_TAG, stateEvent.device().getName_debug() + " just initialized!");
 					connected = true;
 					//gatt.discoverServices();
