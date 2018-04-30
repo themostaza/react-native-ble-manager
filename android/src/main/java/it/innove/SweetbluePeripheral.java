@@ -32,6 +32,7 @@ import java.util.UUID;
 
 import com.idevicesinc.sweetblue.BleDevice;
 import com.idevicesinc.sweetblue.BleDeviceState;
+import com.idevicesinc.sweetblue.WriteBuilder;
 
 /**
  * Peripheral wraps the BluetoothDevice and provides methods to convert to JSON.
@@ -40,7 +41,7 @@ public class SweetbluePeripheral {
 
 	private static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
 	public static final String LOG_TAG = "RNBleManagerPeripheral";
-	private static final int otapMTU = 247;
+	private static final int maxMTU = 512;
 
 	private BleDevice device;
 	private byte[] advertisingData;
@@ -99,15 +100,12 @@ public class SweetbluePeripheral {
 			@Override
 			public void onEvent(StateEvent stateEvent) {
                 Log.i(LOG_TAG, stateEvent.device().toString());
-				//gatt = device.getNativeGatt();
-				// Check if the device entered the INITIALIZED state (this is the "true" connected state where the device is ready to be operated upon).
 				if (stateEvent.didEnter(BleDeviceState.INITIALIZED)) {
 					Log.i(LOG_TAG, stateEvent.device().getName_debug() + " just initialized!");
 					connected = true;
-					//gatt.discoverServices();
 					sendConnectionEvent(device, "BleManagerConnectPeripheral");
 					WritableMap map = asWritableMap(gatt);
-					if(callback != null &&isConnecting) {
+					if(callback != null && isConnecting) {
 						isConnecting = false;
                         callback.invoke(null, map);
                     }
@@ -116,12 +114,6 @@ public class SweetbluePeripheral {
 				    Log.i(LOG_TAG, stateEvent.device().getName_debug() + " disconnected2");
 				    if (connected) {
 						connected = false;
-
-						/*if (gatt != null) {
-							gatt.disconnect();
-							gatt.close();
-							gatt = null;
-						}*/
 					}
 
 					sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
@@ -509,10 +501,30 @@ public class SweetbluePeripheral {
 		super.onMtuChanged(gatt, mtuSize, status);
 	}*/
 
-	private void setNotify(UUID serviceUUID, UUID characteristicUUID, Boolean notify, Callback callback){
+	private void setNotify(final UUID serviceUUID, final UUID characteristicUUID, Boolean notify,
+                           Callback callback){
 		Log.d(LOG_TAG, "setNotify");
 
-		if (gatt == null) {
+		device.enableNotify(serviceUUID, characteristicUUID, new BleDevice.ReadWriteListener() {
+            @Override
+            public void onEvent(ReadWriteEvent e) {
+
+                byte[] dataValue = e.data();
+                Log.d(LOG_TAG, "Read: " + BleManager.bytesToHex(dataValue) + " from peripheral: " +
+                        device.getMacAddress() + " " + serviceUUID.toString());
+
+                WritableMap map = Arguments.createMap();
+                map.putString("peripheral", device.getMacAddress());
+                map.putString("characteristic", characteristicUUID.toString());
+                map.putString("service", serviceUUID.toString());
+                map.putString("value", BleManager.bytesToHex(dataValue));
+                sendEvent("BleManagerDidUpdateValueForCharacteristic", map);
+            }
+        });
+
+        callback.invoke();
+
+		/*if (gatt == null) {
 			callback.invoke("BluetoothGatt is null");
 			return;
 		}
@@ -560,7 +572,7 @@ public class SweetbluePeripheral {
 		} else {
 			callback.invoke("Characteristic " + characteristicUUID + " not found");
 		}
-
+        */
 	}
 
 	public void registerNotify(UUID serviceUUID, UUID characteristicUUID, Callback callback) {
@@ -646,19 +658,20 @@ public class SweetbluePeripheral {
 		}
 	}
 
-	public void setMTU(Callback callback) {
-		if (gatt == null) {
-			callback.invoke("BluetoothGatt is null", null);
-			return;
-		}
+	public void setMTU(final Callback callback) {
+	    device.negotiateMtu(maxMTU, new BleDevice.ReadWriteListener() {
+            @Override
+            public void onEvent(ReadWriteEvent e) {
+                if(e.wasSuccess()) {
+                    Log.d(LOG_TAG, "MTU set to:" + e.mtu() );
+                    callback.invoke();
+                } else {
+                    Log.d(LOG_TAG, "MTU negotiation error ");
+                    callback.invoke("MTU negotiation error ");
+                }
 
-		mtuCallback = callback;
-
-		if (!hasCorrectMTU && Build.VERSION.SDK_INT >= 21 ) {
-			gatt.requestMtu(this.otapMTU);
-		} else {
-			mtuCallback.invoke(null, false);
-		}
+            }
+        });
 	}
 
 
@@ -699,13 +712,19 @@ public class SweetbluePeripheral {
 
 	public void write(UUID serviceUUID, UUID characteristicUUID, byte[] data, Integer
             maxByteSize, Integer queueSleepTime, final Callback callback, int writeType) {
+		Log.d(LOG_TAG, "WriteEvent1 ");
+		WriteBuilder wBuilder = new WriteBuilder(serviceUUID, characteristicUUID);
+		wBuilder.setBytes(data);
+		wBuilder.setWriteType(BleDevice.ReadWriteListener.Type.WRITE_NO_RESPONSE);
 		if (!device.is(BleDeviceState.INITIALIZED)) {
+			Log.d(LOG_TAG, "WriteEvent0 ");
 			callback.invoke("Device is not connected");
 		} else {
-            device.write(serviceUUID, characteristicUUID, data, new BleDevice.ReadWriteListener() {
+			Log.d(LOG_TAG, "WriteEvent2 ");
+            device.write(wBuilder, new BleDevice.ReadWriteListener() {
                 @Override
                 public void onEvent(ReadWriteEvent e) {
-                    Log.d(LOG_TAG, "ReadWriteEvent " + e.toString());
+                    Log.d(LOG_TAG, "WriteEvent " + e.toString());
                     if (e.wasSuccess()) {
                         Log.d(LOG_TAG, "Write completed");
                         callback.invoke();
@@ -714,8 +733,7 @@ public class SweetbluePeripheral {
                     }
                 }
             });
-        }
-
+	    }
 	}
 
 	// Some peripherals re-use UUIDs for multiple characteristics so we need to check the properties

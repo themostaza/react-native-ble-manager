@@ -219,20 +219,20 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	public void startNotification(String deviceUUID, String serviceUUID, String characteristicUUID, Callback callback) {
 		Log.d(LOG_TAG, "startNotification");
 		//TODO
-		callback.invoke();
+		//callback.invoke();
 
-		/*Peripheral peripheral = peripherals.get(deviceUUID);
+        SweetbluePeripheral peripheral = sbPeripherals.get(deviceUUID);
 		if (peripheral != null){
 			peripheral.registerNotify(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), callback);
 		} else
-			callback.invoke("Peripheral not found");*/
+			callback.invoke("Peripheral not found");
 	}
 
 	@ReactMethod
 	public void stopNotification(String deviceUUID, String serviceUUID, String characteristicUUID, Callback callback) {
 		Log.d(LOG_TAG, "stopNotification");
 
-		Peripheral peripheral = peripherals.get(deviceUUID);
+		SweetbluePeripheral peripheral = sbPeripherals.get(deviceUUID);
 		if (peripheral != null){
 			peripheral.removeNotify(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), callback);
 		} else
@@ -243,7 +243,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	public void write(String deviceUUID, String serviceUUID, String characteristicUUID, String message, Integer maxByteSize, Callback callback) {
 		Log.d(LOG_TAG, "Write to: " + deviceUUID);
 
-		Peripheral peripheral = peripherals.get(deviceUUID);
+        SweetbluePeripheral peripheral = sbPeripherals.get(deviceUUID);
 		if (peripheral != null){
 			byte[] decoded = Base64.decode(message.getBytes(), Base64.DEFAULT);
 			Log.d(LOG_TAG, "Message(" + decoded.length + "): " + bytesToHex(decoded));
@@ -288,7 +288,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	@ReactMethod
 	public void negotiateMTU(String deviceUUID,  Callback callback) {
 		Log.d(LOG_TAG, "Negotiate MTU for: " + deviceUUID);
-		Peripheral peripheral = peripherals.get(deviceUUID);
+		SweetbluePeripheral peripheral = sbPeripherals.get(deviceUUID);
 		if (peripheral != null){
 			peripheral.setMTU(callback);
 		} else

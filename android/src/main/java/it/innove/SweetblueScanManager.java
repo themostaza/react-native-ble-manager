@@ -48,7 +48,6 @@ import com.idevicesinc.sweetblue.utils.Interval;
 import com.idevicesinc.sweetblue.utils.Uuids;
 import com.idevicesinc.sweetblue.BleManagerConfig.ScanFilter;
 
-@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class SweetblueScanManager {
 
 	protected BluetoothAdapter bluetoothAdapter;
@@ -236,17 +235,23 @@ public class SweetblueScanManager {
         @Override public Please onEvent(final IncomingEvent e) {
             Log.d(bleManager.LOG_TAG, "incoming: " + e.toString());
             byte[] value = e.data_received();
+            Log.d(bleManager.LOG_TAG, "incoming value: " +value.toString()+ " " + value.length );
             if (value != null && value.length > 0)
             {
                 final StringBuilder stringBuilder = new StringBuilder(value.length);
-                for(byte byteChar : value)
+                for(byte byteChar : value) {
+                    Log.d(bleManager.LOG_TAG, "incoming val: " +String.format("%02X", byteChar) );
                     stringBuilder.append(String.format("%02X", byteChar));
+                }
+
+                String valueHex = it.innove.BleManager.bytesToHex(value);
+
 
                 try {
                     JSONObject json = new JSONObject();
                     json.put("id", e.macAddress());
-                    json.put("data",  stringBuilder.toString());
-
+                    json.put("data",  valueHex);
+                    Log.d(bleManager.LOG_TAG, "incoming data parser2: " +valueHex);
                     Bundle bundle = BundleJSONConverter.convertToBundle(json);
                     WritableMap map = Arguments.fromBundle(bundle);
                     bleManager.sendEvent("BleManagerDidReceivedData", map);
