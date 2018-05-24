@@ -31,6 +31,7 @@ import java.util.UUID;
 
 
 import com.idevicesinc.sweetblue.BleDevice;
+import com.idevicesinc.sweetblue.BleDeviceConfig;
 import com.idevicesinc.sweetblue.BleDeviceState;
 import com.idevicesinc.sweetblue.WriteBuilder;
 
@@ -72,6 +73,10 @@ public class SweetbluePeripheral {
 		this.advertisingRSSI = advertisingRSSI;
 		this.advertisingData = scanRecord;
 		this.reactContext = reactContext;
+		BleDeviceConfig config = new BleDeviceConfig();
+		config.autoBondFixes = false;
+		config.bondingFailFailsConnection = false;
+		this.device.setConfig(config);
 
 	}
 
@@ -94,12 +99,12 @@ public class SweetbluePeripheral {
 	}
 
 	public void connect(final Callback callback, Activity activity) {
-        Log.d(LOG_TAG, "Connecting...");
-        isConnecting = true;
-        device.connect(new BleDevice.StateListener() {
+		Log.d(LOG_TAG, "Connecting...");
+		isConnecting = true;
+		device.connect(new BleDevice.StateListener() {
 			@Override
 			public void onEvent(StateEvent stateEvent) {
-                Log.i(LOG_TAG, stateEvent.device().toString());
+				Log.i(LOG_TAG, stateEvent.device().toString());
 				if (stateEvent.didEnter(BleDeviceState.INITIALIZED)) {
 					Log.i(LOG_TAG, stateEvent.device().getName_debug() + " just initialized!");
 					connected = true;
@@ -107,12 +112,12 @@ public class SweetbluePeripheral {
 					WritableMap map = asWritableMap(gatt);
 					if(callback != null && isConnecting) {
 						isConnecting = false;
-                        callback.invoke(null, map);
-                    }
+						callback.invoke(null, map);
+					}
 
 				} else if (stateEvent.didEnter(BleDeviceState.DISCONNECTED) && !device.is(BleDeviceState.RETRYING_BLE_CONNECTION)) {
-				    Log.i(LOG_TAG, stateEvent.device().getName_debug() + " disconnected2");
-				    if (connected) {
+					Log.i(LOG_TAG, stateEvent.device().getName_debug() + " disconnected2");
+					if (connected) {
 						connected = false;
 					}
 
@@ -124,46 +129,46 @@ public class SweetbluePeripheral {
 
 					}
 				}
-		    }
-        }, new BleDevice.DefaultConnectionFailListener()
-        {
-            @Override
-            public Please onEvent(ConnectionFailEvent e)
-            {
-                // Like in the BluetoothEnabler callback higher up in this class, we want to allow the default implementation do what it needs to do
-                // However, in this case, we check the resulting Please that is returned to determine if we need to do anything yet.
-                Please please = super.onEvent(e);
+			}
+		}, new BleDevice.DefaultConnectionFailListener()
+		{
+			@Override
+			public Please onEvent(ConnectionFailEvent e)
+			{
+				// Like in the BluetoothEnabler callback higher up in this class, we want to allow the default implementation do what it needs to do
+				// However, in this case, we check the resulting Please that is returned to determine if we need to do anything yet.
+				Please please = super.onEvent(e);
 
-                // If the returned please is NOT a retry, then SweetBlue has given up trying to connect, so let's print an error log
-                if (!please.isRetry())
-                {
-                    Log.e(LOG_TAG, e.device().getName_debug() + " failed to connect with a status of " + e.status().name());
-                    if (callback != null && isConnecting) {
+				// If the returned please is NOT a retry, then SweetBlue has given up trying to connect, so let's print an error log
+				if (!please.isRetry())
+				{
+					Log.e(LOG_TAG, e.device().getName_debug() + " failed to connect with a status of " + e.status().name());
+					if (callback != null && isConnecting) {
 						isConnecting = false;
-                        callback.invoke("Connection error");
-                    }
-                }
+						callback.invoke("Connection error");
+					}
+				}
 
 
 
-                return please;
-            }
-        } );
+				return please;
+			}
+		} );
 	}
 
 	public void disconnect() {
 		connectCallback = null;
 
-        try {
-            device.disconnect();
-            //gatt.close();
-            //gatt = null;
-            Log.d(LOG_TAG, "Disconnect");
+		try {
+			device.disconnect();
+			//gatt.close();
+			//gatt = null;
+			Log.d(LOG_TAG, "Disconnect");
 
-        } catch (Exception e) {
-            sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
-            Log.d(LOG_TAG, "Error on disconnect", e);
-        }
+		} catch (Exception e) {
+			sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
+			Log.d(LOG_TAG, "Error on disconnect", e);
+		}
 	}
 
 	public JSONObject asJSONObject() {
@@ -391,12 +396,12 @@ public class SweetbluePeripheral {
 	}*/
 
 	public void updateRssi(int rssi) {
-        advertisingRSSI = rssi;
-    }
+		advertisingRSSI = rssi;
+	}
 
-    public void updateAdvertisingData(byte[] scanRecord) {
-        advertisingData = scanRecord;
-    }
+	public void updateAdvertisingData(byte[] scanRecord) {
+		advertisingData = scanRecord;
+	}
 
 	public int unsignedToBytes(byte b) {
 		return b & 0xFF;
@@ -502,27 +507,27 @@ public class SweetbluePeripheral {
 	}*/
 
 	private void setNotify(final UUID serviceUUID, final UUID characteristicUUID, Boolean notify,
-                           Callback callback){
+						   Callback callback){
 		Log.d(LOG_TAG, "setNotify");
 
 		device.enableNotify(serviceUUID, characteristicUUID, new BleDevice.ReadWriteListener() {
-            @Override
-            public void onEvent(ReadWriteEvent e) {
+			@Override
+			public void onEvent(ReadWriteEvent e) {
 
-                byte[] dataValue = e.data();
-                Log.d(LOG_TAG, "Read: " + BleManager.bytesToHex(dataValue) + " from peripheral: " +
-                        device.getMacAddress() + " " + serviceUUID.toString());
+				byte[] dataValue = e.data();
+				Log.d(LOG_TAG, "Read: " + BleManager.bytesToHex(dataValue) + " from peripheral: " +
+						device.getMacAddress() + " " + serviceUUID.toString());
 
-                WritableMap map = Arguments.createMap();
-                map.putString("peripheral", device.getMacAddress());
-                map.putString("characteristic", characteristicUUID.toString());
-                map.putString("service", serviceUUID.toString());
-                map.putString("value", BleManager.bytesToHex(dataValue));
-                sendEvent("BleManagerDidUpdateValueForCharacteristic", map);
-            }
-        });
+				WritableMap map = Arguments.createMap();
+				map.putString("peripheral", device.getMacAddress());
+				map.putString("characteristic", characteristicUUID.toString());
+				map.putString("service", serviceUUID.toString());
+				map.putString("value", BleManager.bytesToHex(dataValue));
+				sendEvent("BleManagerDidUpdateValueForCharacteristic", map);
+			}
+		});
 
-        callback.invoke();
+		callback.invoke();
 
 		/*if (gatt == null) {
 			callback.invoke("BluetoothGatt is null");
@@ -590,7 +595,7 @@ public class SweetbluePeripheral {
 	// This function prefers Notify over Indicate
 	private BluetoothGattCharacteristic findNotifyCharacteristic(BluetoothGattService service, UUID characteristicUUID) {
 		BluetoothGattCharacteristic characteristic = null;
-        Log.d(LOG_TAG, "findNotifyCharacteristic");
+		Log.d(LOG_TAG, "findNotifyCharacteristic");
 		try {
 			// Check for Notify first
 			List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
@@ -659,19 +664,19 @@ public class SweetbluePeripheral {
 	}
 
 	public void setMTU(final Callback callback) {
-	    device.negotiateMtu(maxMTU, new BleDevice.ReadWriteListener() {
-            @Override
-            public void onEvent(ReadWriteEvent e) {
-                if(e.wasSuccess()) {
-                    Log.d(LOG_TAG, "MTU set to:" + e.mtu() );
-                    callback.invoke();
-                } else {
-                    Log.d(LOG_TAG, "MTU negotiation error ");
-                    callback.invoke("MTU negotiation error ");
-                }
+		device.negotiateMtu(maxMTU, new BleDevice.ReadWriteListener() {
+			@Override
+			public void onEvent(ReadWriteEvent e) {
+				if(e.wasSuccess()) {
+					Log.d(LOG_TAG, "MTU set to:" + e.mtu() );
+					callback.invoke();
+				} else {
+					Log.d(LOG_TAG, "MTU negotiation error ");
+					callback.invoke("MTU negotiation error ");
+				}
 
-            }
-        });
+			}
+		});
 	}
 
 
@@ -711,29 +716,31 @@ public class SweetbluePeripheral {
 	}
 
 	public void write(UUID serviceUUID, UUID characteristicUUID, byte[] data, Integer
-            maxByteSize, Integer queueSleepTime, final Callback callback, int writeType) {
+			maxByteSize, Integer queueSleepTime, final Callback callback, int writeType) {
 		Log.d(LOG_TAG, "WriteEvent1 ");
 		WriteBuilder wBuilder = new WriteBuilder(serviceUUID, characteristicUUID);
 		wBuilder.setBytes(data);
-		wBuilder.setWriteType(BleDevice.ReadWriteListener.Type.WRITE_NO_RESPONSE);
+		wBuilder.setWriteType(writeType == BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT ?
+				BleDevice.ReadWriteListener.Type.WRITE :
+				BleDevice.ReadWriteListener.Type.WRITE_NO_RESPONSE);
 		if (!device.is(BleDeviceState.INITIALIZED)) {
 			Log.d(LOG_TAG, "WriteEvent0 ");
 			callback.invoke("Device is not connected");
 		} else {
 			Log.d(LOG_TAG, "WriteEvent2 ");
-            device.write(wBuilder, new BleDevice.ReadWriteListener() {
-                @Override
-                public void onEvent(ReadWriteEvent e) {
-                    Log.d(LOG_TAG, "WriteEvent " + e.toString());
-                    if (e.wasSuccess()) {
-                        Log.d(LOG_TAG, "Write completed");
-                        callback.invoke();
-                    } else {
-                        callback.invoke("Error ");
-                    }
-                }
-            });
-	    }
+			device.write(wBuilder, new BleDevice.ReadWriteListener() {
+				@Override
+				public void onEvent(ReadWriteEvent e) {
+					Log.d(LOG_TAG, "WriteEvent " + e.toString());
+					if (e.wasSuccess()) {
+						Log.d(LOG_TAG, "Write completed");
+						callback.invoke();
+					} else {
+						callback.invoke("Error ");
+					}
+				}
+			});
+		}
 	}
 
 	// Some peripherals re-use UUIDs for multiple characteristics so we need to check the properties
