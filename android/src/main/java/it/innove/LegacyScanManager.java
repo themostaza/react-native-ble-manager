@@ -2,12 +2,8 @@ package it.innove;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
-import android.os.Bundle;
 import android.util.Log;
 import com.facebook.react.bridge.*;
-import org.json.JSONException;
 
 import static com.facebook.react.bridge.UiThreadUtil.runOnUiThread;
 
@@ -37,26 +33,21 @@ public class LegacyScanManager extends ScanManager {
 					runOnUiThread(new Runnable() {
 						@Override
 						public void run() {
-                            Log.i(bleManager.LOG_TAG, "DiscoverPeripheral2: " + device.getName());
-                            String address = device.getAddress();
+							Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + device.getName());
+							String address = device.getAddress();
+							Peripheral peripheral;
 
-                            Peripheral peripheral = bleManager.peripherals.get(address);
-                            if (peripheral == null) {
-                                BluetoothManager manager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-                                peripheral = new Peripheral(device, rssi, scanRecord, reactContext, manager);
-                                bleManager.peripherals.put(address, peripheral);
-                            } else {
-                                peripheral.updateRssi(rssi);
-                                peripheral.updateAdvertisingData(scanRecord);
-                            }
+							if (!bleManager.peripherals.containsKey(address)) {
+								peripheral = new Peripheral(device, rssi, scanRecord, reactContext);
+								bleManager.peripherals.put(device.getAddress(), peripheral);
+							} else {
+								peripheral = bleManager.peripherals.get(address);
+								peripheral.updateRssi(rssi);
+								peripheral.updateData(scanRecord);
+							}
 
-                            try {
-                                Bundle bundle = BundleJSONConverter.convertToBundle(peripheral.asJSONObject());
-                                WritableMap map = Arguments.fromBundle(bundle);
-                                bleManager.sendEvent("BleManagerDiscoverPeripheral", map);
-                            } catch (JSONException ignored) {
-
-                            }
+							WritableMap map = peripheral.asWritableMap();
+							bleManager.sendEvent("BleManagerDiscoverPeripheral", map);
 						}
 					});
 				}
@@ -65,7 +56,10 @@ public class LegacyScanManager extends ScanManager {
 			};
 
 	@Override
-	public void scan(ReadableArray serviceUUIDs, final int scanSeconds, Callback callback) {
+	public void scan(ReadableArray serviceUUIDs, final int scanSeconds, ReadableMap options, Callback callback) {
+		if (serviceUUIDs.size() > 0) {
+			Log.d(bleManager.LOG_TAG, "Filter is not working in pre-lollipop devices");
+		}
 		getBluetoothAdapter().startLeScan(mLeScanCallback);
 		setScanState(true);
 		if (scanSeconds > 0) {

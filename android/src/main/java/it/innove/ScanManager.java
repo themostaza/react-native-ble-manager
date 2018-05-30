@@ -17,6 +17,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.ReadableMap;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -53,7 +54,7 @@ public abstract class ScanManager {
 
 	public abstract void stopScan(Callback callback);
 
-	public abstract void scan(ReadableArray serviceUUIDs, final int scanSeconds, Callback callback);
+	public abstract void scan(ReadableArray serviceUUIDs, final int scanSeconds, ReadableMap options, Callback callback);
 
     protected void setScanState(Boolean state) {
         isScanning = state;
@@ -84,6 +85,12 @@ public abstract class ScanManager {
 
         callback.invoke();
     }
+
+    protected void stopTransferService(Callback callback) {
+        mBluetoothGattServer.close();
+        callback.invoke();
+    }
+
 
 	private final BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback() {
 

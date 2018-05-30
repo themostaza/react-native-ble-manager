@@ -36,8 +36,8 @@ import com.idevicesinc.sweetblue.BleDeviceState;
 import com.idevicesinc.sweetblue.WriteBuilder;
 
 /**
- * Peripheral wraps the BluetoothDevice and provides methods to convert to JSON.
- */
+* Peripheral wraps the BluetoothDevice and provides methods to convert to JSON.
+*/
 public class SweetbluePeripheral {
 
 	private static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
@@ -148,9 +148,6 @@ public class SweetbluePeripheral {
 						callback.invoke("Connection error");
 					}
 				}
-
-
-
 				return please;
 			}
 		} );
@@ -361,7 +358,7 @@ public class SweetbluePeripheral {
 	public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
 
 		Log.d(LOG_TAG, "onConnectionStateChange from " + status + " to "+ newState + " on " +
-                "peripheral:" + device.getMacAddress());
+               "peripheral:" + device.getMacAddress());
 
 		this.gatt = gatt;
 
@@ -414,7 +411,7 @@ public class SweetbluePeripheral {
 
 		byte[] dataValue = characteristic.getValue();
 		Log.d(LOG_TAG, "Read: " + BleManager.bytesToHex(dataValue) + " from peripheral: " +
-                device.getMacAddress());
+               device.getMacAddress());
 
 		WritableMap map = Arguments.createMap();
 		map.putString("peripheral", device.getMacAddress());
@@ -577,7 +574,7 @@ public class SweetbluePeripheral {
 		} else {
 			callback.invoke("Characteristic " + characteristicUUID + " not found");
 		}
-        */
+       */
 	}
 
 	public void registerNotify(UUID serviceUUID, UUID characteristicUUID, Callback callback) {
@@ -663,8 +660,8 @@ public class SweetbluePeripheral {
 		}
 	}
 
-	public void setMTU(final Callback callback) {
-		device.negotiateMtu(maxMTU, new BleDevice.ReadWriteListener() {
+	public void requestMTU(int mtu, final Callback callback) {
+		device.negotiateMtu(mtu, new BleDevice.ReadWriteListener() {
 			@Override
 			public void onEvent(ReadWriteEvent e) {
 				if(e.wasSuccess()) {
@@ -678,9 +675,6 @@ public class SweetbluePeripheral {
 			}
 		});
 	}
-
-
-
 
 	// Some peripherals re-use UUIDs for multiple characteristics so we need to check the properties
 	// and UUID of all characteristics instead of using service.getCharacteristic(characteristicUUID)
@@ -746,7 +740,7 @@ public class SweetbluePeripheral {
 	// Some peripherals re-use UUIDs for multiple characteristics so we need to check the properties
 	// and UUID of all characteristics instead of using service.getCharacteristic(characteristicUUID)
 	/*private BluetoothGattCharacteristic findWritableCharacteristic(BluetoothGattService service,
-                                                                    UUID characteristicUUID, int writeType) {
+                                                                   UUID characteristicUUID, int writeType) {
 		try {
 			BluetoothGattCharacteristic characteristic = null;
 

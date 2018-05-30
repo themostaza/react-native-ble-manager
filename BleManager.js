@@ -36,14 +36,13 @@ class BleManager {
     });
   }
 
-  negotiateMTU(peripheralId) {
-    if (React.Platform.OS === "ios") return Promise.resolve(true);
+  retrieveServices(peripheralId) {
     return new Promise((fulfill, reject) => {
-      bleManager.negotiateMTU(peripheralId, (error, rssi) => {
+      bleManager.retrieveServices(peripheralId, (error, peripheral) => {
         if (error) {
           reject(error);
         } else {
-          fulfill(rssi);
+          fulfill(peripheral);
         }
       });
     });
@@ -134,11 +133,35 @@ class BleManager {
 
   connect(peripheralId) {
     return new Promise((fulfill, reject) => {
-      bleManager.connect(peripheralId, (error, peripheral) => {
+      bleManager.connect(peripheralId, error => {
         if (error) {
           reject(error);
         } else {
-          fulfill(peripheral);
+          fulfill();
+        }
+      });
+    });
+  }
+
+  createBond(peripheralId) {
+    return new Promise((fulfill, reject) => {
+      bleManager.createBond(peripheralId, error => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill();
+        }
+      });
+    });
+  }
+
+  removeBond(peripheralId) {
+    return new Promise((fulfill, reject) => {
+      bleManager.removeBond(peripheralId, error => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill();
         }
       });
     });
@@ -213,19 +236,33 @@ class BleManager {
     });
   }
 
-  scan(serviceUUIDs, seconds, allowDuplicates, useLegacyScan) {
+  scan(serviceUUIDs, seconds, allowDuplicates, scanningOptions = {}) {
     return new Promise((fulfill, reject) => {
       if (allowDuplicates == null) {
         allowDuplicates = false;
       }
-      if (useLegacyScan == null) {
-        useLegacyScan = false;
+
+      // (ANDROID) Match as many advertisement per filter as hw could allow
+      // dependes on current capability and availability of the resources in hw.
+      if (scanningOptions.numberOfMatches == null) {
+        scanningOptions.numberOfMatches = 3;
       }
+
+      // (ANDROID) Defaults to MATCH_MODE_AGGRESSIVE
+      if (scanningOptions.matchMode == null) {
+        scanningOptions.matchMode = 1;
+      }
+
+      // (ANDROID) Defaults to SCAN_MODE_LOW_POWER on android
+      if (scanningOptions.scanMode == null) {
+        scanningOptions.scanMode = 0;
+      }
+
       bleManager.scan(
         serviceUUIDs,
         seconds,
         allowDuplicates,
-        useLegacyScan,
+        scanningOptions,
         error => {
           if (error) {
             reject(error);
@@ -277,6 +314,22 @@ class BleManager {
     });
   }
 
+  getBondedPeripherals() {
+    return new Promise((fulfill, reject) => {
+      bleManager.getBondedPeripherals((error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          if (result != null) {
+            fulfill(result);
+          } else {
+            fulfill([]);
+          }
+        }
+      });
+    });
+  }
+
   getDiscoveredPeripherals() {
     return new Promise((fulfill, reject) => {
       bleManager.getDiscoveredPeripherals((error, result) => {
@@ -293,6 +346,18 @@ class BleManager {
     });
   }
 
+  removePeripheral(peripheralId) {
+    return new Promise((fulfill, reject) => {
+      bleManager.removePeripheral(peripheralId, error => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill();
+        }
+      });
+    });
+  }
+
   isPeripheralConnected(peripheralId, serviceUUIDs) {
     return this.getConnectedPeripherals(serviceUUIDs).then(result => {
       if (
@@ -304,6 +369,34 @@ class BleManager {
       } else {
         return false;
       }
+    });
+  }
+
+  requestConnectionPriority(peripheralId, connectionPriority) {
+    return new Promise((fulfill, reject) => {
+      bleManager.requestConnectionPriority(
+        peripheralId,
+        connectionPriority,
+        (error, status) => {
+          if (error) {
+            reject(error);
+          } else {
+            fulfill(status);
+          }
+        }
+      );
+    });
+  }
+
+  requestMTU(peripheralId, mtu) {
+    return new Promise((fulfill, reject) => {
+      bleManager.requestMTU(peripheralId, mtu, (error, mtu) => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill(mtu);
+        }
+      });
     });
   }
 }

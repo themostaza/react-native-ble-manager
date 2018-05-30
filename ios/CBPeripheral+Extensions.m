@@ -1,4 +1,5 @@
 #import "CBPeripheral+Extensions.h"
+#import "NSData+Conversion.h"
 
 static char ADVERTISING_IDENTIFER;
 static char ADVERTISEMENT_RSSI_IDENTIFER;
@@ -29,10 +30,7 @@ static char ADVERTISEMENT_RSSI_IDENTIFER;
     [dictionary setObject: [self name] forKey: @"name"];
   }
   
-  
-  if ([self RSSI]) {
-    [dictionary setObject: [self RSSI] forKey: @"rssi"];
-  } else if ([self advertisementRSSI]) {
+  if ([self advertisementRSSI]) {
     [dictionary setObject: [self advertisementRSSI] forKey: @"rssi"];
   }
   
@@ -217,7 +215,7 @@ static char ADVERTISEMENT_RSSI_IDENTIFER;
   }
   
   if ((p & CBCharacteristicPropertyAuthenticatedSignedWrites) != 0x0) {
-    [props addObject:@"AutheticateSignedWrites"];
+    [props addObject:@"AuthenticateSignedWrites"];
   }
   
   if ((p & CBCharacteristicPropertyExtendedProperties) != 0x0) {
@@ -240,7 +238,8 @@ id dataToArrayBuffer(NSData* data)
 {
   return @{
            @"CDVType" : @"ArrayBuffer",
-           @"data" :[data base64EncodedStringWithOptions:0]
+           @"data" :[data base64EncodedStringWithOptions:0],
+           @"bytes" :[data toArray]
            };
 }
 
