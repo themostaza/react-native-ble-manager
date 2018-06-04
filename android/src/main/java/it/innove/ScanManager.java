@@ -27,34 +27,34 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class ScanManager {
 
-	protected BluetoothAdapter bluetoothAdapter;
-	protected Context context;
-	protected ReactContext reactContext;
-	protected BleManager bleManager;
-	protected AtomicInteger scanSessionId = new AtomicInteger();
-	private Boolean isScanning = false;
+    protected BluetoothAdapter bluetoothAdapter;
+    protected Context context;
+    protected ReactContext reactContext;
+    protected BleManager bleManager;
+    protected AtomicInteger scanSessionId = new AtomicInteger();
+    private Boolean isScanning = false;
 
-	public BluetoothGattServer mBluetoothGattServer;
+    public BluetoothGattServer mBluetoothGattServer;
 
 
-	public ScanManager(ReactApplicationContext reactContext, BleManager bleManager) {
-		context = reactContext;
-		this.reactContext = reactContext;
-		this.bleManager = bleManager;
+    public ScanManager(ReactApplicationContext reactContext, BleManager bleManager) {
+        context = reactContext;
+        this.reactContext = reactContext;
+        this.bleManager = bleManager;
 
-	}
+    }
 
-	protected BluetoothAdapter getBluetoothAdapter() {
-		if (bluetoothAdapter == null) {
-			android.bluetooth.BluetoothManager manager = (android.bluetooth.BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-			bluetoothAdapter = manager.getAdapter();
-		}
-		return bluetoothAdapter;
-	}
+    protected BluetoothAdapter getBluetoothAdapter() {
+        if (bluetoothAdapter == null) {
+            android.bluetooth.BluetoothManager manager = (android.bluetooth.BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+            bluetoothAdapter = manager.getAdapter();
+        }
+        return bluetoothAdapter;
+    }
 
-	public abstract void stopScan(Callback callback);
+    public abstract void stopScan(Callback callback);
 
-	public abstract void scan(ReadableArray serviceUUIDs, final int scanSeconds, ReadableMap options, Callback callback);
+    public abstract void scan(ReadableArray serviceUUIDs, final int scanSeconds, ReadableMap options, Callback callback);
 
     protected void setScanState(Boolean state) {
         isScanning = state;
@@ -67,7 +67,7 @@ public abstract class ScanManager {
         map.putString("state", stringState);
         Log.d(bleManager.LOG_TAG, "state: " + stringState);
         bleManager.sendEvent("BleManagerDidUpdateScanState", map);
-    };
+    }
 
     protected void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
         // TODO move mBluetoothGattServer outside this class?
@@ -92,32 +92,30 @@ public abstract class ScanManager {
     }
 
 
-	private final BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback() {
+    private final BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback() {
 
-		@Override
-		public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
-			Log.d(bleManager.LOG_TAG, "mGattServerCallback onConnectionStateChange ");
-		}
+        @Override
+        public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
+            Log.d(bleManager.LOG_TAG, "mGattServerCallback onConnectionStateChange ");
+        }
 
-		@Override
-		public void onServiceAdded(int status, BluetoothGattService service) {
-			Log.d(bleManager.LOG_TAG, "mGattServerCallback onServiceAdded ");
-		}
+        @Override
+        public void onServiceAdded(int status, BluetoothGattService service) {
+            Log.d(bleManager.LOG_TAG, "mGattServerCallback onServiceAdded ");
+        }
 
-		@Override
-		public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value)
-		{
-			Log.d(bleManager.LOG_TAG, "mGattServerCallback onCharacteristicWriteRequest ");
-            if (value != null && value.length > 0)
-            {
+        @Override
+        public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
+            Log.d(bleManager.LOG_TAG, "mGattServerCallback onCharacteristicWriteRequest ");
+            if (value != null && value.length > 0) {
                 final StringBuilder stringBuilder = new StringBuilder(value.length);
-                for(byte byteChar : value)
+                for (byte byteChar : value)
                     stringBuilder.append(String.format("%02X", byteChar));
 
                 try {
                     JSONObject json = new JSONObject();
                     json.put("id", device.getAddress());
-                    json.put("data",  stringBuilder.toString());
+                    json.put("data", stringBuilder.toString());
 
                     Bundle bundle = BundleJSONConverter.convertToBundle(json);
                     WritableMap map = Arguments.fromBundle(bundle);
@@ -126,6 +124,6 @@ public abstract class ScanManager {
                     e.printStackTrace();
                 }
             }
-		}
-	};
+        }
+    };
 }
