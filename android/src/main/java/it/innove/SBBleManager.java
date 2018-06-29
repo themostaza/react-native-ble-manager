@@ -102,7 +102,7 @@ class SBBleManager extends ReactContextBaseJavaModule implements ActivityEventLi
 
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         //filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        //context.registerReceiver(mReceiver, filter);
+        context.registerReceiver(mReceiver, filter);
         callback.invoke();
         Log.d(LOG_TAG, "BleManager initialized");
     }
@@ -354,10 +354,7 @@ class SBBleManager extends ReactContextBaseJavaModule implements ActivityEventLi
 
     @ReactMethod
     public void checkState() {
-        //TODO: implement
-
         Log.d(LOG_TAG, "checkState");
-
 
         BluetoothAdapter adapter = getBluetoothAdapter();
         String state = "off";
