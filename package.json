@@ -1,14 +1,14 @@
 {
   "name": "react-native-ble-manager",
-  "version": "6.3.1-mostaza.1",
+  "version": "6.4.0",
   "description": "A BLE module for react native.",
   "main": "BleManager",
   "repository": {
     "type": "git",
-    "url": "https://github.com/innoveit/react-native-ble-manager.git"
+    "url": "https://github.com/themostaza/react-native-ble-manager.git"
   },
   "bugs": {
-    "url": "https://github.com/innoveit/react-native-ble-manager/issues"
+    "url": "https://github.com/themostaza/react-native-ble-manager/issues"
   },
   "keywords": [
     "react-native",
