@@ -227,6 +227,56 @@ __Arguments__
 - `serviceUUID` - `String` - the UUID of the service.
 - `characteristicUUID` - `String` - the UUID of the characteristic.
 
+### startTransferService(serviceUUID, characteristicUUID)
+Enable a service to receive message from BLE pheripherals, a new message trigger a BleManagerDidReceivedData event.
+Returns a `Promise` object.
+
+__Arguments__
+* `serviceUUID` - `String` - the UUID of the service.
+* `characteristicUUID` - `String` - the UUID of the characteristic.
+
+__Examples__
+
+```js
+BleManager.startTransferService(
+  'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
+  'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
+)
+  .then(() => {
+    // Success code
+    console.log('Transfer service enabled ');
+  })
+  .catch(error => {
+    // Failure code
+    console.log(error);
+  });
+```
+
+### stopTransferService(serviceUUID, characteristicUUID)
+Disable a service to receive message from BLE pheripherals.
+Returns a `Promise` object.
+
+__Arguments__
+* `serviceUUID` - `String` - the UUID of the service.
+* `characteristicUUID` - `String` - the UUID of the characteristic.
+
+__Examples__
+
+```js
+BleManager.stopTransferService(
+  'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
+  'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
+)
+  .then(() => {
+    // Success code
+    console.log('Transfer service disable ');
+  })
+  .catch(error => {
+    // Failure code
+    console.log(error);
+  });
+```
+
 ### read(peripheralId, serviceUUID, characteristicUUID)
 Read the current value of the specified characteristic, you need to call `retrieveServices` method before.
 Returns a `Promise` object.
