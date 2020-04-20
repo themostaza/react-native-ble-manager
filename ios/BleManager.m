@@ -1050,6 +1050,32 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
     }
 }
 
+RCT_EXPORT_METHOD(checkScanState)
+{
+  if (manager != nil){
+    [self centralManagerDidUpdateState:self.manager];
+  }
+}
+
+-(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+  NSLog(@"observeValueForKeyPath");
+  if ([keyPath isEqualToString:@"isScanning"]) {
+    [self notififyScanState];
+  }
+}
+
+- (void)notififyScanState
+{
+  NSString* scanState = [manager isScanning] ? @"on" : @"off";
+  NSLog(@"Notify scan state %@", scanState);
+  [self.bridge.eventDispatcher sendAppEventWithName:@"BleManagerDidUpdateScanState" body:@{@"state":scanState}];
+}
+
+- (void)dealloc
+{
+  [manager removeObserver:self forKeyPath:@"isScanning"];
+}
+
 -(void)centralManager:(CBCentralManager *)central willRestoreState:(NSDictionary<NSString *,id> *)dict
 {
     NSArray<CBPeripheral *> *restoredPeripherals = dict[CBCentralManagerRestoredStatePeripheralsKey];
