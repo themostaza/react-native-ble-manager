@@ -73,7 +73,7 @@ class BleManager  {
 
   writeWithoutResponse(peripheralId, serviceUUID, characteristicUUID, data, maxByteSize, queueSleepTime) {
     if (maxByteSize == null) {
-      maxByteSize = 20;
+      maxByteSize = 20000;
     }
     if (queueSleepTime == null) {
       queueSleepTime = 10;
