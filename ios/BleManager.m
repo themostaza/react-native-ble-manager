@@ -333,7 +333,9 @@ RCT_EXPORT_METHOD(start:(NSDictionary *)options callback:(nonnull RCTResponseSen
 
 RCT_EXPORT_METHOD(scan:(NSArray *)serviceUUIDStrings timeoutSeconds:(nonnull NSNumber *)timeoutSeconds allowDuplicates:(BOOL)allowDuplicates options:(nonnull NSDictionary*)scanningOptions callback:(nonnull RCTResponseSenderBlock)callback)
 {
-    NSLog(@"scan with timeout %@", timeoutSeconds);
+    timeoutSeconds.intValue > 0
+        ? NSLog(@"scan with timeout %@", timeoutSeconds)
+        : NSLog(@"scan without timeout");
     
     // Clear the peripherals before scanning again, otherwise cannot connect again after disconnection
     // Only clear peripherals that are not connected - otherwise connections fail silently (without any
@@ -364,9 +366,12 @@ RCT_EXPORT_METHOD(scan:(NSArray *)serviceUUIDStrings timeoutSeconds:(nonnull NSN
     }
     [manager scanForPeripheralsWithServices:serviceUUIDs options:options];
     
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.scanTimer = [NSTimer scheduledTimerWithTimeInterval:[timeoutSeconds floatValue] target:self selector:@selector(stopScanTimer:) userInfo: nil repeats:NO];
-    });
+    if (timeoutSeconds.intValue > 0) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.scanTimer = [NSTimer scheduledTimerWithTimeInterval:[timeoutSeconds floatValue] target:self selector:@selector(stopScanTimer:) userInfo: nil repeats:NO];
+        });
+    }
+
     callback(@[]);
 }
 
