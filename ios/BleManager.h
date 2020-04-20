@@ -3,7 +3,7 @@
 #import <CoreBluetooth/CoreBluetooth.h>
 
 
-@interface BleManager : RCTEventEmitter <RCTBridgeModule, CBCentralManagerDelegate, CBPeripheralDelegate>{
+@interface BleManager : RCTEventEmitter <RCTBridgeModule, CBCentralManagerDelegate, CBPeripheralDelegate, CBPeripheralManagerDelegate>{
     NSString* discoverPeripherialCallbackId;
     NSMutableDictionary* connectCallbacks;
     NSMutableDictionary *readCallbacks;
@@ -18,6 +18,7 @@
 
 @property (strong, nonatomic) NSMutableSet *peripherals;
 @property (strong, nonatomic) CBCentralManager *manager;
+@property (strong, nonatomic) CBPeripheralManager *transfer;
 @property (weak, nonatomic) NSTimer *scanTimer;
 
 // Returns the static CBCentralManager instance used by this library.
