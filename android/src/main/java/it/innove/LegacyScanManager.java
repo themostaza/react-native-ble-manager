@@ -19,7 +19,8 @@ public class LegacyScanManager extends ScanManager {
 		scanSessionId.incrementAndGet();
 
 		getBluetoothAdapter().stopLeScan(mLeScanCallback);
-		callback.invoke();
+		setScanState(false);
+    	if (callback != null) callback.invoke();
 	}
 
 	private BluetoothAdapter.LeScanCallback mLeScanCallback =
@@ -57,6 +58,7 @@ public class LegacyScanManager extends ScanManager {
 			Log.d(bleManager.LOG_TAG, "Filter is not working in pre-lollipop devices");
 		}
 		getBluetoothAdapter().startLeScan(mLeScanCallback);
+		setScanState(false);
 
 		if (scanSeconds > 0) {
 			Thread thread = new Thread() {
@@ -81,6 +83,7 @@ public class LegacyScanManager extends ScanManager {
 								}
 								WritableMap map = Arguments.createMap();
 								bleManager.sendEvent("BleManagerStopScan", map);
+								setScanState(false);
 							}
 						}
 					});
@@ -91,5 +94,9 @@ public class LegacyScanManager extends ScanManager {
 			thread.start();
 		}
 		callback.invoke();
+	}
+
+	public boolean isScanning() {
+		return true;
 	}
 }

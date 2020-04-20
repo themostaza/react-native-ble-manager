@@ -30,7 +30,8 @@ public class LollipopScanManager extends ScanManager {
 		scanSessionId.incrementAndGet();
 
 		getBluetoothAdapter().getBluetoothLeScanner().stopScan(mScanCallback);
-		callback.invoke();
+		setScanState(false);
+        if (callback != null) callback.invoke();
 	}
 
     @Override
@@ -58,6 +59,7 @@ public class LollipopScanManager extends ScanManager {
         }
         
         getBluetoothAdapter().getBluetoothLeScanner().startScan(filters, scanSettingsBuilder.build(), mScanCallback);
+        setScanState(true);
         if (scanSeconds > 0) {
             Thread thread = new Thread() {
                 private int currentScanSession = scanSessionId.incrementAndGet();
@@ -78,6 +80,7 @@ public class LollipopScanManager extends ScanManager {
                             if (scanSessionId.intValue() == currentScanSession) {
                                 if(btAdapter.getState() == BluetoothAdapter.STATE_ON) {
                                     btAdapter.getBluetoothLeScanner().stopScan(mScanCallback);
+                                    setScanState(false);
                                 }
                                 WritableMap map = Arguments.createMap();
                                 bleManager.sendEvent("BleManagerStopScan", map);
@@ -100,7 +103,7 @@ public class LollipopScanManager extends ScanManager {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + result.getDevice().getName());
+					Log.i(bleManager.LOG_TAG, "DiscoverPeripheral: " + result.getDevice().getName() + " - " +  result.getScanRecord().toString());
 
                     LollipopPeripheral peripheral = (LollipopPeripheral) bleManager.getPeripheral(result.getDevice());
                     if (peripheral == null) {

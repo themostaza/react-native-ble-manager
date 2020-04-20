@@ -427,6 +427,12 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 		sendEvent("BleManagerDidUpdateState", map);
 	}
 
+	@ReactMethod
+	public void checkScanState(){
+			Log.d(LOG_TAG, "checkScanState");
+			scanManager.notifyScanState();
+	}
+
 	private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
