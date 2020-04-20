@@ -245,6 +245,16 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 	}
 
 	@ReactMethod
+	public void startTransferService(String serviceUUID, String characteristicUUID, Callback callback) {
+		scanManager.startTransferService(serviceUUID, characteristicUUID, callback);
+	}
+
+	@ReactMethod
+	public void stopTransferService(Callback callback) {
+		scanManager.stopTransferService(callback);
+	}
+
+	@ReactMethod
 	public void connect(String peripheralUUID, Callback callback) {
 		Log.d(LOG_TAG, "Connect to: " + peripheralUUID);
 
