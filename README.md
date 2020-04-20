@@ -196,6 +196,14 @@ __Examples__
 BleManager.checkState();
 ```
 
+### checkScanState()
+Force the module to check the scan state of BLE and trigger a BleManagerDidUpdateScanState event.
+
+__Examples__
+```js
+BleManager.checkScanState();
+```
+
 ### startNotification(peripheralId, serviceUUID, characteristicUUID)
 Start the notification on the specified characteristic, you need to call `retrieveServices` method before.
 Returns a `Promise` object.
@@ -606,6 +614,22 @@ bleManagerEmitter.addListener(
     (args) => {
         // The new state: args.state
     }
+);
+```
+
+###  BleManagerDidUpdateScanState
+The BLE scan change state.
+
+__Arguments__
+- `state` - `String` - the new BLE scan state ('on'/'off').
+
+__Examples__
+```js
+bleManagerEmitter.addListener(
+  'BleManagerDidUpdateScanState',
+  (args) => {
+    // The new state: args.state
+  }
 );
 ```
 
