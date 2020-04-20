@@ -38,9 +38,15 @@ repositories {
 		url "$rootDir/../node_modules/react-native/android"
 		// To test url "$rootDir/../example/node_modules/react-native/android"
 	}
+
+	maven {
+		url "https://archiva.sweetblue.io/repository/internal"
+	}
 }
 
 
 dependencies {
 	implementation "com.facebook.react:react-native:+"
+
+	implementation "com.idevicesinc:sweetblue:3.2.2"
 }
