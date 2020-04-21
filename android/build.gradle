@@ -42,11 +42,16 @@ repositories {
 	maven {
 		url "https://archiva.sweetblue.io/repository/internal"
 	}
+
+	// Repo to fix error: Could not find org.jetbrains.trove4j:trove4j:20160824
+	jcenter()
 }
 
 
 dependencies {
 	implementation "com.facebook.react:react-native:+"
+
+	implementation "androidx.appcompat:appcompat:1.0.0"
 
 	implementation "com.idevicesinc:sweetblue:3.2.2"
 }

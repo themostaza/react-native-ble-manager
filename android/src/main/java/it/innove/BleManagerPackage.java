@@ -19,7 +19,7 @@ public class BleManagerPackage implements ReactPackage {
 	public List<NativeModule> createNativeModules(ReactApplicationContext reactApplicationContext) {
 		List<NativeModule> modules = new ArrayList<>();
 
-		modules.add(new BleManager(reactApplicationContext));
+		modules.add(new SweetblueBleManager(reactApplicationContext));
 		return  modules;
 	}
 
