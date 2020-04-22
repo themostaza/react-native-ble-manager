@@ -241,12 +241,12 @@ class SweetblueBleManager extends ReactContextBaseJavaModule implements Activity
 	}
 
 	@ReactMethod
-	public void disconnect(String peripheralUUID, Callback callback) {
+	public void disconnect(String peripheralUUID, boolean force, Callback callback) {
 		Log.d(LOG_TAG, "Disconnect from: " + peripheralUUID);
 
 		SweetbluePeripheral peripheral = sbPeripherals.get(peripheralUUID);
 		if (peripheral != null) {
-			peripheral.disconnect();
+			peripheral.disconnect(force);
 			callback.invoke();
 		} else
 			callback.invoke("Peripheral not found");

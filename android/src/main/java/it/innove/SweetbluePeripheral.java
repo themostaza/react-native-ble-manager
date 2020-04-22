@@ -130,7 +130,8 @@ public class SweetbluePeripheral {
         });
     }
 
-    public void disconnect() {
+    // `force` param exists only to be API-compatible with class Peripheral
+    public void disconnect(boolean force) {
         connectCallback = null;
 
         try {
@@ -138,7 +139,6 @@ public class SweetbluePeripheral {
             // gatt.close();
             // gatt = null;
             Log.d(LOG_TAG, "Disconnect");
-
         } catch (Exception e) {
             sendConnectionEvent(device, "BleManagerDisconnectPeripheral");
             Log.d(LOG_TAG, "Error on disconnect", e);
