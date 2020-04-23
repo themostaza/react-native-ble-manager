@@ -33,6 +33,32 @@ The library support the autolink feature.
 ...
 ```
 
+##### Android - SweetBlue 3
+
+Add the the SweetBlue API key at `android/app/src/main/assets` in `sweetblue_api_key.txt`
+
+Add SweetBlue repository in `android/build.gradle`:
+
+```groovy
+allprojects {
+  repositories {
+    // ...
+    maven {
+      url "https://archiva.sweetblue.io/repository/internal"
+    }
+  }
+}
+```
+
+And the SweetBlue dependency in `android/app/build.gradle`:
+
+```groovy
+dependencies {
+  // ...
+  implementation "com.idevicesinc:sweetblue:3.2.2"
+}
+```
+
 ##### iOS - Update Info.plist
 In iOS >= 13 you need to add the `NSBluetoothAlwaysUsageDescription` string key.
 
